@@ -1,6 +1,6 @@
 author = JPAN
-version = 1.0
+version = 1.0.1
 displayName = Research System from Terraria 1.4
 hideCode = false
 hideResources = false
-homepage = https://forums.terraria.org/index.php?threads/rare-item-swap.88076/
+homepage = https://forums.terraria.org/index.php?threads/research-from-1-4-in-terraria-1-3-5.89859/
