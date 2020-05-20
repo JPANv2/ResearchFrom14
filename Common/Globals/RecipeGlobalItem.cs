@@ -23,6 +23,25 @@ namespace ResearchFrom14.Common.Globals
             }
         }
 
+        public override bool ConsumeAmmo(Item item, Player player)
+        {
+            ResearchPlayer rp = player.GetModPlayer<ResearchPlayer>();
+            if(item.ammo > 0 && rp.IsResearched(item))
+            {
+                return false;
+            }
+            return base.ConsumeAmmo(item, player);
+        }
+
+        public override bool ConsumeItem(Item item, Player player)
+        {
+            ResearchPlayer rp = player.GetModPlayer<ResearchPlayer>();
+            if (ModContent.GetInstance<Config>().infiniteItems && rp.IsResearched(item))
+            {
+                return false;
+            }
+            return base.ConsumeItem(item, player);
+        }
         public override void ModifyTooltips(Item item, List<TooltipLine> tooltips)
         {
             if (ModContent.GetInstance<Config>().showTag)

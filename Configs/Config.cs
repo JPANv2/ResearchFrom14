@@ -37,6 +37,16 @@ namespace ResearchFrom14.Configs
         [DefaultValue(true)]
         public bool summonDetection;
 
+        [Label("Researched Ammo is infinite")]
+        [Tooltip("If you have researched a type of ammo, that ammo is considered infinte, and will not be consumed.")]
+        [DefaultValue(true)]
+        public bool infiniteAmmo;
+
+        [Label("Researched Consumables are infinite")]
+        [Tooltip("If you have researched a type of consumable item (such as blocks, potions, furniture, etc...), that item and will not be consumed when used.")]
+        [DefaultValue(true)]
+        public bool infiniteItems;
+
         [Label("Display ItemTag on item tooltip")]
         [Tooltip("Shows the mod and item internal name below the item tooltip. Use this if you want to find out how to add an exception to the research value to an item.")]
         [DefaultValue(false)]
