@@ -394,10 +394,13 @@ namespace ResearchFrom14.Common
 
         public override void ProcessTriggers(TriggersSet triggersSet)
         {
-            if (ResearchFrom14.hotkey.JustPressed && Main.playerInventory)
+            if (ResearchFrom14.hotkey.JustPressed && (Main.playerInventory|| ModContent.GetInstance<Config>().buttonAlwaysOn))
             {
                 if (!ResearchUI.visible)
+                {
+                    Main.playerInventory = true;
                     (mod as ResearchFrom14).ActivatePurchaseUI(player.whoAmI);
+                }
                 else
                     (mod as ResearchFrom14).ui.setVisible(false);
             }

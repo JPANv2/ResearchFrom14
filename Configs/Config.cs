@@ -47,6 +47,11 @@ namespace ResearchFrom14.Configs
         [DefaultValue(true)]
         public bool infiniteItems;
 
+        [Label("Hotkey works outside inventory")]
+        [Tooltip("Shows the research button whenever you press the button, opening the inventory if it was not open. Required true to work with autopause on.")]
+        [DefaultValue(false)]
+        public bool buttonAlwaysOn;
+
         [Label("Display ItemTag on item tooltip")]
         [Tooltip("Shows the mod and item internal name below the item tooltip. Use this if you want to find out how to add an exception to the research value to an item.")]
         [DefaultValue(false)]
