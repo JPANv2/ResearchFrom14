@@ -142,7 +142,11 @@ namespace ResearchFrom14
                 int player = reader.ReadByte();
                 if (Main.netMode == NetmodeID.Server || player != Main.myPlayer)
                 {
-                    Main.player[player].GetModPlayer<ResearchPlayer>().research = TagIO.Read(reader);
+                    TagCompound tempResearch = TagIO.Read(reader);
+                    foreach(KeyValuePair<string, object> read in tempResearch)
+                    {
+                        Main.player[player].GetModPlayer<ResearchPlayer>().research[read.Key] = tempResearch.GetAsInt(read.Key);
+                    }
                     return;
                 }
             }

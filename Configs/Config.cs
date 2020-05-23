@@ -52,6 +52,11 @@ namespace ResearchFrom14.Configs
         [DefaultValue(false)]
         public bool buttonAlwaysOn;
 
+        [Label("Display Research amount on item tooltip")]
+        [Tooltip("Shows how much research is reqiired for the selected item to be fully researched.")]
+        [DefaultValue(true)]
+        public bool showResearch;
+
         [Label("Display ItemTag on item tooltip")]
         [Tooltip("Shows the mod and item internal name below the item tooltip. Use this if you want to find out how to add an exception to the research value to an item.")]
         [DefaultValue(false)]

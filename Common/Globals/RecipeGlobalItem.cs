@@ -44,6 +44,25 @@ namespace ResearchFrom14.Common.Globals
         }
         public override void ModifyTooltips(Item item, List<TooltipLine> tooltips)
         {
+            if (ModContent.GetInstance<Config>().showResearch)
+            {
+                ResearchPlayer rp = Main.player[Main.myPlayer].GetModPlayer<ResearchPlayer>();
+                if (rp.IsResearched(item))
+                {
+                    tooltips.Add(new TooltipLine(this.mod, "Research", "Researched!"));
+                }
+                else
+                {
+                    if(ResearchTable.GetTotalResearch(item) <= 0)
+                    {
+                        tooltips.Add(new TooltipLine(this.mod, "Research", "Unresearchable!"));
+                    }
+                    else
+                    {
+                        tooltips.Add(new TooltipLine(this.mod, "Research", "Research " + (ResearchTable.GetTotalResearch(item) - rp.GetResearchedAmount(item)) + " more to unlock."));
+                    }
+                }
+            }
             if (ModContent.GetInstance<Config>().showTag)
             {
                 tooltips.Add(new TooltipLine(this.mod, "tagID", "<" + ResearchFrom14.ItemToTag(item) + ">"));

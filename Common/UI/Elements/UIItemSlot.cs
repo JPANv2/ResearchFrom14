@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ResearchFrom14.Common;
+using ResearchFrom14.Items;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.ID;
@@ -251,7 +252,7 @@ namespace ResearchFrom14.Common.UI.Elements
             base.whileMouseHovering();
             if (Main.mouseLeftRelease && Main.mouseLeft)
             {
-                if (ItemSlot.ShiftInUse)
+                if (ItemSlot.ShiftInUse && item.type != ModContent.ItemType<ResearchSharingBook>())
                 {
                     Main.player[Main.myPlayer].QuickSpawnItem(item.type, item.maxStack);
                     return;
@@ -260,6 +261,15 @@ namespace ResearchFrom14.Common.UI.Elements
                 {
                     Main.mouseItem = new Item();
                     Main.mouseItem.SetDefaults(item.type);
+                    if (item.type == ModContent.ItemType<ResearchSharingBook>())
+                    {
+                        ResearchSharingBook rs = Main.mouseItem.modItem as ResearchSharingBook;
+                        ResearchPlayer rp = Main.player[Main.myPlayer].GetModPlayer<ResearchPlayer>();
+                        ((ResearchSharingBook)Main.mouseItem.modItem).knowledge = rp.researchedCache;
+                        ((ResearchSharingBook)Main.mouseItem.modItem).playerName = rp.player.name;
+                        Main.NewText(rp.player.name + " : " + ((ResearchSharingBook)Main.mouseItem.modItem).knowledge.Count);
+                        //Main.mouseItem.HoverName = rp.player.name + "'s " + Main.mouseItem.modItem.Name;
+                    }
                     Main.mouseItem.stack = Main.mouseItem.maxStack;
                     return;
                 }
@@ -276,6 +286,15 @@ namespace ResearchFrom14.Common.UI.Elements
                     {
                         Main.mouseItem = new Item();
                         Main.mouseItem.SetDefaults(item.type);
+                        if (item.type == ModContent.ItemType<ResearchSharingBook>())
+                        {
+                            ResearchSharingBook rs = Main.mouseItem.modItem as ResearchSharingBook;
+                            ResearchPlayer rp = Main.player[Main.myPlayer].GetModPlayer<ResearchPlayer>();
+                            ((ResearchSharingBook)Main.mouseItem.modItem).knowledge = rp.researchedCache;
+                            ((ResearchSharingBook)Main.mouseItem.modItem).playerName = rp.player.name;
+                            Main.NewText(rp.player.name + " : " + ((ResearchSharingBook)Main.mouseItem.modItem).knowledge.Count);
+                            //Main.mouseItem.HoverName = rp.player.name + "'s " + Main.mouseItem.modItem.Name;
+                        }
                         Main.mouseItem.stack = 1;
                     }
                     else

@@ -232,6 +232,16 @@ namespace ResearchFrom14.Common
                             totalResearch[test.type] = 25;
                              AddCategory("Seeds", test.type); 
                         }
+                        else if (test.dye > 0 || test.hairDye > 0)
+                        {
+                            totalResearch[test.type] = 3;
+                            AddCategory("Dye", test.type);
+                        }
+                        else if (isDyeMaterial(test))
+                        {
+                            totalResearch[test.type] = 3;
+                            AddCategory("Dye", test.type);
+                        }
                         else
                         {
                             totalResearch[test.type] = 100;

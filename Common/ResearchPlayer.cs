@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using ResearchFrom14.Common.UI;
 using ResearchFrom14.Configs;
+using ResearchFrom14.Items;
 using Terraria;
 using Terraria.GameInput;
 using Terraria.ID;
@@ -91,6 +92,41 @@ namespace ResearchFrom14.Common
             return AddResearchedAmount(ResearchFrom14.ItemIDToTag(type), amount);
         }
 
+        public void AddAllResearchedItems(List<int> researched)
+        {
+            foreach(int type in researched)
+            {
+                if (!researchedCache.Contains(type))
+                {
+                    Item itm = new Item();
+                    itm.SetDefaults(type);
+                    AddResearchedAmount(type, Int32.MaxValue - 1000);
+                    researchedCache.Add(type);
+                    if (ModContent.GetInstance<Config>().researchRecipes)
+                    {
+                        if (itm.createTile >= 0)
+                        {
+                            RecipeFinder rf = new RecipeFinder();
+                            rf.AddTile(itm.createTile);
+                            List<Recipe> res = rf.SearchRecipes();
+                            // Main.NewText("Found " + res.Count + "recipes with tile.");
+                            foreach (Recipe r in res)
+                            {
+                                validateAndResearchRecipe(r);
+                            }
+                        }
+                        RecipeFinder rf2 = new RecipeFinder();
+                        rf2.AddIngredient(itm.type);
+                        List<Recipe> res2 = rf2.SearchRecipes();
+                        // Main.NewText("Found " + res2.Count + "recipes with item.");
+                        foreach (Recipe r in res2)
+                        {
+                            validateAndResearchRecipe(r);
+                        }
+                    }
+                }
+            }
+        }
         public void Research()
         {
             if (destroyingItem == null || destroyingItem.IsAir)
@@ -374,6 +410,12 @@ namespace ResearchFrom14.Common
                 destroyingItem = ItemIO.Load(research.GetCompound("0.research"));
                 research.Remove("0.research");
             }
+            if (!research.ContainsKey(ResearchFrom14.ItemIDToTag(ModContent.ItemType<ResearchSharingBook>())) || 
+                !research.ContainsKey(ResearchFrom14.ItemIDToTag(ModContent.ItemType<ResearchErasingBook>())))
+            {
+                research[ResearchFrom14.ItemIDToTag(ModContent.ItemType<ResearchSharingBook>())] = Int32.MaxValue - 1000;
+                research[ResearchFrom14.ItemIDToTag(ModContent.ItemType<ResearchErasingBook>())] = Int32.MaxValue - 1000;
+            }
             researchedCache = new List<int>();
             for(int i = 0; i< ItemLoader.ItemCount; i++)
             {
@@ -385,10 +427,32 @@ namespace ResearchFrom14.Common
         public override void SyncPlayer(int toWho, int fromWho, bool newPlayer)
         {
             ModPacket packet = mod.GetPacket();
-            packet.Write((byte)0);
-            packet.Write((byte)player.whoAmI);
-            TagIO.Write(research, packet);
-            packet.Send(toWho, fromWho);
+            int cnt = 0;
+            TagCompound research2 = new TagCompound();
+            IEnumerator<KeyValuePair<string, object>> enume = research.GetEnumerator();
+            enume.Reset();
+            while (enume.MoveNext())
+            {
+                research2[enume.Current.Key] = research.GetAsInt(enume.Current.Key);
+                cnt += (enume.Current.Key.ToByteArray().Length/128) + 1;
+                if (cnt >= 500)
+                {
+                    packet.Write((byte)0);
+                    packet.Write((byte)player.whoAmI);
+                    TagIO.Write(research2, packet);
+                    packet.Send(toWho, fromWho);
+                    cnt = 0;
+                    packet = mod.GetPacket();
+                    research2.Clear();
+                }
+            }
+            if (cnt > 0)
+            {
+                packet.Write((byte)0);
+                packet.Write((byte)player.whoAmI);
+                TagIO.Write(research2, packet);
+                packet.Send(toWho, fromWho);
+            }
         }
         #endregion
 
