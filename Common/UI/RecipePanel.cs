@@ -1,5 +1,6 @@
 ﻿
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using ResearchFrom14.Common.Components;
 using ResearchFrom14.Common.UI.Elements;
@@ -20,10 +21,11 @@ namespace ResearchFrom14.Common.UI
         private PathTreePanel changer;
         public PathTree selected = null;
         public Item selectedItem = null;
-        
+        public int count = 0;
         public bool hasChanges = false;
-        
-
+        UIText loading = new UIText("Loading...");
+        Task t = null;
+        string search = "";
         public RecipePanel(ResearchUI panel)
         {
             parent = panel;
@@ -48,72 +50,109 @@ namespace ResearchFrom14.Common.UI
             scrollbar.Left.Set(-14, 1f);
             Append(scrollbar);
             internalGrid.SetScrollbar(scrollbar);
-            
+
+            loading.VAlign = 0.5f;
+            loading.HAlign = 0.45f;
+
             //Append(internalGrid);
             hasChanges = true;
         }
 
         public override void Update(GameTime gameTime)
         {
-            if(selected != changer.selected || selectedItem != parent.destroySlot.item || hasChanges)
+            if (selected != changer.selected || !parent.search.GetText().Equals(search))
             {
-                selected = changer.selected;
-                selectedItem = parent.destroySlot.item;
-                internalGrid.Clear();
-                internalGrid.Left.Set(0, 0);
-                internalGrid.Top.Set(0, 0);
-                internalGrid.Width.Set(this.Width.Pixels - 4, 0);
-                internalGrid.Height.Set(this.Height.Pixels - 4, 0);
-
-                ResearchPlayer player = Main.player[Main.myPlayer].GetModPlayer<ResearchPlayer>();
-                List<Item> toDisplay = new List<Item>();
-                foreach (int type in player.researchedCache)
+                if (t == null)
                 {
-                    Item itm = new Item();
-                    itm.SetDefaults(type);
-                    itm.stack = 1;
-                    if (parent.search.GetText() == null || parent.search.GetText().Length == 0 || itm.Name.ToLower().Contains(parent.search.GetText().ToLower()))
-                    {
-                        toDisplay.Add(itm);
-                    }
+                    selected = changer.selected;
+                    search = parent.search.GetText();
+                    RemoveChild(internalGrid);
+                    loading.VAlign = 0.5f;
+                    loading.HAlign = 0.45f;
+                    Append(loading);
+                    t = Task.Run(recreateList);
+                    
                 }
-                toDisplay.Sort(new ItemNameComparer());
-
-                if (selected.Equals(changer.allTree))
+            }
+            if (t != null)
+            {
+                if (t.IsCompleted)
                 {
-                    foreach(Item itm in toDisplay)
-                    {
-                        internalGrid.Add(new PurchaseItemSlot(itm));
-                    }
+                    RemoveChild(loading);
+                    Append(internalGrid);
+                    hasChanges = true;
+                    t = null;
                 }
-                else
-                {
-                    if (ResearchTable.category.ContainsKey(selected.getFullPath()))
-                    {
-                       // ModLoader.GetMod("ResearchFrom14").Logger.Info("Category " + selected.getFullPath() + " has items:");
-                        foreach(int cat in ResearchTable.category[selected.getFullPath()])
-                        {
-                            Item test = new Item();
-                            test.SetDefaults(cat);
-                         //   ModLoader.GetMod("ResearchFrom14").Logger.Info("  - " + test.Name + " ( id " + test.type + " = "+cat + ")" );   
-                        }
-                        foreach (Item itm in toDisplay)
-                        {
-                            if (ResearchTable.category[selected.getFullPath()].Contains(itm.type))
-                                internalGrid.Add(new PurchaseItemSlot(itm));
-                        }
-                    }
+            }
+            if (hasChanges)
+            {
+                if (t == null) { 
+                    internalGrid.Left.Set(0, 0);
+                    internalGrid.Top.Set(0, 0);
+                    internalGrid.Width.Set(this.Width.Pixels - 4, 0);
+                    internalGrid.Height.Set(this.Height.Pixels - 4, 0);
+                    internalGrid.Recalculate();
                 }
-                internalGrid.Recalculate();
                 Recalculate();
-
                 hasChanges = false;
             }
-            Recalculate();
+            else
+            {
+                Recalculate();
+            }
             base.Update(gameTime);
         }
-    }
 
+
+        public void recreateList()
+        {
+            internalGrid.Clear();
+            internalGrid.Left.Set(0, 0);
+            internalGrid.Top.Set(0, 0);
+            internalGrid.Width.Set(this.Width.Pixels - 4, 0);
+            internalGrid.Height.Set(this.Height.Pixels - 4, 0);
+
+            ResearchPlayer player = Main.player[Main.myPlayer].GetModPlayer<ResearchPlayer>();
+            List<Item> toDisplay = new List<Item>();
+            foreach (int type in player.researchedCache)
+            {
+                Item itm = new Item();
+                itm.SetDefaults(type);
+                itm.stack = 1;
+                if (parent.search.GetText() == null || parent.search.GetText().Length == 0 || itm.Name.ToLower().Contains(parent.search.GetText().ToLower()))
+                {
+                    toDisplay.Add(itm);
+                }
+            }
+            toDisplay.Sort(new ItemNameComparer());
+
+            if (selected.Equals(changer.allTree))
+            {
+                foreach (Item itm in toDisplay)
+                {
+                    internalGrid.Add(new PurchaseItemSlot(itm));
+                }
+            }
+            else
+            {
+                if (ResearchTable.category.ContainsKey(selected.getFullPath()))
+                {
+                    // ModLoader.GetMod("ResearchFrom14").Logger.Info("Category " + selected.getFullPath() + " has items:");
+                    foreach (int cat in ResearchTable.category[selected.getFullPath()])
+                    {
+                        Item test = new Item();
+                        test.SetDefaults(cat);
+                        //   ModLoader.GetMod("ResearchFrom14").Logger.Info("  - " + test.Name + " ( id " + test.type + " = "+cat + ")" );   
+                    }
+                    foreach (Item itm in toDisplay)
+                    {
+                        if (ResearchTable.category[selected.getFullPath()].Contains(itm.type))
+                            internalGrid.Add(new PurchaseItemSlot(itm));
+                    }
+                }
+            }
+        }
+    }
     public class ItemNameComparer : IComparer<Item>
     {
         public int Compare(Item x, Item y)

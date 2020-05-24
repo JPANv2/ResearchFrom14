@@ -18,6 +18,8 @@ namespace ResearchFrom14.Common
     public class ResearchTable
     {
 
+        static Task initTask = null;
+
         public static int[] totalResearch = new int[0];
         public static Dictionary<string, List<int>> category = new Dictionary<string, List<int>>();
         public static int[] createdTiles = new int[0];
@@ -27,13 +29,20 @@ namespace ResearchFrom14.Common
             totalResearch = new int[ItemLoader.ItemCount+1];
             category.Clear();
             createdTiles = new int[ItemLoader.ItemCount + 1];
+            ModLoader.GetMod("ResearchFrom14").Logger.Info("Inititalizing Research System...");
+            initTask = Task.Run(FillResearchTable);
+        }
+
+        private static void FillResearchTable()
+        {
             foreach (string tag in ModContent.GetInstance<ExceptionListConfig>().customItemValues.Keys)
             {
                 int type = ResearchFrom14.getTypeFromTag(tag);
-                if(type > 0)
+                if (type > 0)
                 {
                     totalResearch[type] = ModContent.GetInstance<ExceptionListConfig>().customItemValues[tag].value;
-                    foreach (String s in ModContent.GetInstance<ExceptionListConfig>().customItemValues[tag].categories) {
+                    foreach (String s in ModContent.GetInstance<ExceptionListConfig>().customItemValues[tag].categories)
+                    {
                         AddCategory(s, type);
                     }
                 }
@@ -61,30 +70,33 @@ namespace ResearchFrom14.Common
                             if (test.melee)
                             {
                                 AddCategory("Weapons/Melee", test.type);
-                            } else if (test.ranged)
+                            }
+                            else if (test.ranged)
                             {
-                                 AddCategory("Weapons/Ranged", test.type);
+                                AddCategory("Weapons/Ranged", test.type);
                             }
                             else if (test.magic)
                             {
-                                 AddCategory("Weapons/Magic", test.type);
+                                AddCategory("Weapons/Magic", test.type);
                             }
                             else if (test.thrown)
                             {
-                                 AddCategory("Weapons/Thrown", test.type);
+                                AddCategory("Weapons/Thrown", test.type);
                             }
                             else if (test.summon)
                             {
-                                 AddCategory("Weapons/Summoner", test.type);
-                            } else
+                                AddCategory("Weapons/Summoner", test.type);
+                            }
+                            else
                             {
-                                 AddCategory("Weapons/Other", test.type);
+                                AddCategory("Weapons/Other", test.type);
                             }
                         }
-                        else if (test.vanity) {
+                        else if (test.vanity)
+                        {
                             if (test.accessory)
                             {
-                                if  (test.backSlot > 0 || test.wingSlot > 0)
+                                if (test.backSlot > 0 || test.wingSlot > 0)
                                 {
                                     AddCategory("Vanity/Accessories/Wings and Capes", test.type);
                                     AddCategory("Accessories/Vanity/Wings and Capes", test.type);
@@ -109,7 +121,8 @@ namespace ResearchFrom14.Common
                             {
                                 AddCategory("Vanity/Armor/Legs", test.type);
                                 AddCategory("Armor/Vanity/Legs", test.type);
-                            }else if (test.mountType > 0)
+                            }
+                            else if (test.mountType > 0)
                             {
                                 AddCategory("Vanity/Mounts", test.type);
                                 AddCategory("Mounts/Vanity", test.type);
@@ -119,7 +132,8 @@ namespace ResearchFrom14.Common
                                 AddCategory("Vanity", test.type);
                             }
                         }
-                        else if (test.accessory) {
+                        else if (test.accessory)
+                        {
                             if (test.accessory)
                             {
                                 if (test.backSlot > 0 || test.wingSlot > 0)
@@ -131,20 +145,21 @@ namespace ResearchFrom14.Common
                                     AddCategory("Accessories", test.type);
                                 }
                             }
-                        } else if (test.headSlot > 0)
-                            {
-                                AddCategory("Armor/Head", test.type);
-                                
-                            }
-                            else if (test.bodySlot > 0)
-                            {
-                                AddCategory("Armor/Body", test.type);
-                               
-                            }
-                            else if (test.legSlot > 0)
-                            {
-                                AddCategory("Armor/Legs", test.type);
-                            }
+                        }
+                        else if (test.headSlot > 0)
+                        {
+                            AddCategory("Armor/Head", test.type);
+
+                        }
+                        else if (test.bodySlot > 0)
+                        {
+                            AddCategory("Armor/Body", test.type);
+
+                        }
+                        else if (test.legSlot > 0)
+                        {
+                            AddCategory("Armor/Legs", test.type);
+                        }
                         else if (test.mountType > 0)
                         {
                             if (MountID.Sets.Cart[test.mountType])
@@ -155,11 +170,13 @@ namespace ResearchFrom14.Common
                             {
                                 AddCategory("Mounts", test.type);
                             }
-                            
-                        }else if (Main.projHook[test.shoot])
+
+                        }
+                        else if (Main.projHook[test.shoot])
                         {
                             AddCategory("Hooks", test.type);
-                        }else if(test.buffType > 0 && Main.vanityPet[test.buffType] && !Main.lightPet[test.buffType])
+                        }
+                        else if (test.buffType > 0 && Main.vanityPet[test.buffType] && !Main.lightPet[test.buffType])
                         {
                             AddCategory("Pets/Normal Pets", test.type);
                         }
@@ -176,7 +193,7 @@ namespace ResearchFrom14.Common
                     else if (isCustomCurrency(test))
                     {
                         totalResearch[test.type] = 50;
-                         AddCategory("Currency", test.type);
+                        AddCategory("Currency", test.type);
                     }
                     else if (test.createWall >= 0)
                     {
@@ -190,7 +207,7 @@ namespace ResearchFrom14.Common
                         if (test.type == ItemID.Acorn)
                         {
                             totalResearch[test.type] = 50;
-                             AddCategory("Tiles", test.type); 
+                            AddCategory("Tiles", test.type);
                         }
                         else if (placer != null && (placer.Width > 1 || placer.Height > 1))
                         {
@@ -208,7 +225,7 @@ namespace ResearchFrom14.Common
                         else if (placer != null && placer.AnchorBottom != null && placer.AnchorBottom.type == AnchorType.Table)
                         {
                             totalResearch[test.type] = 1;
-                             AddCategory("Furniture", test.type); 
+                            AddCategory("Furniture", test.type);
                         }
                         else if (TileID.Sets.Platforms[test.createTile])
                         {
@@ -220,17 +237,17 @@ namespace ResearchFrom14.Common
                             else
                                 totalResearch[test.type] = 200;
 
-                             AddCategory("Platforms", test.type); 
+                            AddCategory("Platforms", test.type);
                         }
                         else if (test.Name.EndsWith(" Bar") || test.Name.EndsWith(" Ingot") || test.Name.EndsWith(" Alloy"))
                         {
                             totalResearch[test.type] = 25;
-                             AddCategory("Bars", test.type); 
+                            AddCategory("Bars", test.type);
                         }
                         else if (test.Name.EndsWith(" Seed") || test.Name.EndsWith(" Seeds"))
                         {
                             totalResearch[test.type] = 25;
-                             AddCategory("Seeds", test.type); 
+                            AddCategory("Seeds", test.type);
                         }
                         else if (test.dye > 0 || test.hairDye > 0)
                         {
@@ -245,41 +262,41 @@ namespace ResearchFrom14.Common
                         else
                         {
                             totalResearch[test.type] = 100;
-                             AddCategory("Tiles", test.type); 
+                            AddCategory("Tiles", test.type);
                         }
                     }
                     else
                     {
-                        
+
                         if (isBossBag(test) || isBossSummon(test))
                         {
                             totalResearch[test.type] = 3;
-                             AddCategory("Boss Bags and Summons", test.type); 
+                            AddCategory("Boss Bags and Summons", test.type);
                         }
                         else if (test.makeNPC > 0 || test.bait > 0)
                         {
                             totalResearch[test.type] = 5;
-                             AddCategory("Critters and Bait", test.type);
+                            AddCategory("Critters and Bait", test.type);
                         }
                         else if (test.dye > 0 || test.hairDye > 0)
                         {
                             totalResearch[test.type] = 3;
-                             AddCategory("Dye", test.type);
+                            AddCategory("Dye", test.type);
                         }
                         else if (isDyeMaterial(test))
                         {
                             totalResearch[test.type] = 3;
-                             AddCategory("Dye", test.type);
+                            AddCategory("Dye", test.type);
                         }
                         else if (test.healLife > 0 || test.healMana > 0)
                         {
                             totalResearch[test.type] = 30;
-                             AddCategory("Potions and Food", test.type);
+                            AddCategory("Potions and Food", test.type);
                         }
                         else if (test.buffType > 0 && test.buffTime > 0)
                         {
                             totalResearch[test.type] = 20;
-                             AddCategory("Potions and Food", test.type);
+                            AddCategory("Potions and Food", test.type);
                         }
                         else if (test.damage > 0)
                         {
@@ -332,7 +349,7 @@ namespace ResearchFrom14.Common
                                 }
                                 else if (test.summon)
                                 {
-                                    if(test.ammo > 0)
+                                    if (test.ammo > 0)
                                     {
                                         AddCategory("Ammo/Summoner", test.type);
                                     }
@@ -361,38 +378,40 @@ namespace ResearchFrom14.Common
                     }
                     totalResearch[test.type] = Math.Min(totalResearch[test.type], test.maxStack);
                     if (test.consumable)
-                    { 
-                       AddCategory("Consumable", test.type);
-                    }
-                    if (test.material) { 
-                       AddCategory("Materials", test.type); 
-                    }
-                   /* ModLoader.GetMod("ResearchFrom14").Logger.Info("Item " + test.Name + " ( id " + test.type + ") has categories:");
-                    foreach(string cat in category.Keys)
                     {
-                        if (category[cat].Contains(test.type))
-                        {
-                            ModLoader.GetMod("ResearchFrom14").Logger.Info("  - " + cat);
-                        }
-                    }*/
+                        AddCategory("Consumable", test.type);
+                    }
+                    if (test.material)
+                    {
+                        AddCategory("Materials", test.type);
+                    }
+                    /* ModLoader.GetMod("ResearchFrom14").Logger.Info("Item " + test.Name + " ( id " + test.type + ") has categories:");
+                     foreach(string cat in category.Keys)
+                     {
+                         if (category[cat].Contains(test.type))
+                         {
+                             ModLoader.GetMod("ResearchFrom14").Logger.Info("  - " + cat);
+                         }
+                     }*/
                     if (!ModContent.GetInstance<Config>().difficultyAffectsExceptions)
                     {
-                            totalResearch[test.type] = (int)Math.Max(Math.Ceiling(totalResearch[test.type] * ModContent.GetInstance<Config>().difficulty), 1);
+                        totalResearch[test.type] = (int)Math.Max(Math.Ceiling(totalResearch[test.type] * ModContent.GetInstance<Config>().difficulty), 1);
                     }
                 }
             }
+            ModLoader.GetMod("ResearchFrom14").Logger.Info("Research System: Applying Difficulty...");
             if (!ModContent.GetInstance<Config>().difficultyAffectsExceptions)
             {
                 for (int i = 1; i < ItemLoader.ItemCount; i++)
                 {
-                    if(totalResearch[i] > 0)
+                    if (totalResearch[i] > 0)
                     {
                         totalResearch[i] = (int)Math.Max(Math.Ceiling(totalResearch[i] * ModContent.GetInstance<Config>().difficulty), 1);
                     }
                 }
             }
+            ModLoader.GetMod("ResearchFrom14").Logger.Info("Research System Initialized.");
         }
-
 
         public static void ClearTable()
         {
