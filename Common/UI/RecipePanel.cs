@@ -90,12 +90,12 @@ namespace ResearchFrom14.Common.UI
                 {
                     if (ResearchTable.category.ContainsKey(selected.getFullPath()))
                     {
-                        ModLoader.GetMod("ResearchFrom14").Logger.Info("Category " + selected.getFullPath() + " has items:");
+                       // ModLoader.GetMod("ResearchFrom14").Logger.Info("Category " + selected.getFullPath() + " has items:");
                         foreach(int cat in ResearchTable.category[selected.getFullPath()])
                         {
                             Item test = new Item();
                             test.SetDefaults(cat);
-                            ModLoader.GetMod("ResearchFrom14").Logger.Info("  - " + test.Name + " ( id " + test.type + " = "+cat + ")" );   
+                         //   ModLoader.GetMod("ResearchFrom14").Logger.Info("  - " + test.Name + " ( id " + test.type + " = "+cat + ")" );   
                         }
                         foreach (Item itm in toDisplay)
                         {

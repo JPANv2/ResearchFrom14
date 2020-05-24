@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 using ResearchFrom14.Configs;
 using Terraria;
 using Terraria.ModLoader;
@@ -47,19 +48,19 @@ namespace ResearchFrom14.Common.Globals
             if (ModContent.GetInstance<Config>().showResearch)
             {
                 ResearchPlayer rp = Main.player[Main.myPlayer].GetModPlayer<ResearchPlayer>();
-                if (rp.IsResearched(item))
+                if (rp.IsResearched(item) && ModContent.GetInstance<Config>().showResearched)
                 {
-                    tooltips.Add(new TooltipLine(this.mod, "Research", "Researched!"));
+                    tooltips.Add(new TooltipLine(this.mod, "Research", "Researched!") { overrideColor = Color.Lerp(Color.HotPink, Color.White, 0.1f) });
                 }
                 else
                 {
                     if(ResearchTable.GetTotalResearch(item) <= 0)
                     {
-                        tooltips.Add(new TooltipLine(this.mod, "Research", "Unresearchable!"));
+                        tooltips.Add(new TooltipLine(this.mod, "Research", "Unresearchable!") { overrideColor = Color.Lerp(Color.HotPink, Color.White, 0.1f) });
                     }
                     else
                     {
-                        tooltips.Add(new TooltipLine(this.mod, "Research", "Research " + (ResearchTable.GetTotalResearch(item) - rp.GetResearchedAmount(item)) + " more to unlock."));
+                        tooltips.Add(new TooltipLine(this.mod, "Research", "Research " + (ResearchTable.GetTotalResearch(item) - rp.GetResearchedAmount(item)) + " more to unlock.") { overrideColor = Color.Lerp(Color.HotPink, Color.White, 0.1f) });
                     }
                 }
             }

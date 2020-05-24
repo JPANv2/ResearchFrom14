@@ -57,6 +57,11 @@ namespace ResearchFrom14.Configs
         [DefaultValue(true)]
         public bool showResearch;
 
+        [Label("Display Researched! tooltip")]
+        [Tooltip("Shows \"Researched!\" on the item if it was already researched. Make false to ignore it.")]
+        [DefaultValue(true)]
+        public bool showResearched;
+
         [Label("Display ItemTag on item tooltip")]
         [Tooltip("Shows the mod and item internal name below the item tooltip. Use this if you want to find out how to add an exception to the research value to an item.")]
         [DefaultValue(false)]

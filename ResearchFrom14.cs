@@ -152,5 +152,53 @@ namespace ResearchFrom14
             }
 
         }
+
+        internal static bool PlaceInInventory(Player player, Item item)
+        {
+            if (item.type >= ItemID.CopperCoin && item.type <= ItemID.PlatinumCoin)
+            {
+                player.SellItem(item.type == ItemID.PlatinumCoin ? 5000000 : item.type == ItemID.GoldCoin ? 50000 : item.type == ItemID.SilverCoin ? 500: 5, item.stack);
+                return true;
+            }
+
+            for (int i = 0; i< 58; i++)
+            {
+                if(player.inventory[i].type  == item.type && player.inventory[i].maxStack< player.inventory[i].stack)
+                {
+                    if(item.stack +player.inventory[i].stack <= player.inventory[i].maxStack)
+                    {
+                        player.inventory[i].stack += item.stack;
+                        item.stack = 0;
+                        item.TurnToAir();
+                        return true;
+                    }
+                    else
+                    {
+                        item.stack -= (player.inventory[i].maxStack - player.inventory[i].stack);
+                        player.inventory[i].stack = player.inventory[i].maxStack;
+                    }
+                }
+            }
+            if (item.ammo != AmmoID.None)
+            {
+                for (int i = 54; i < 58; i++)
+                {
+                    if (player.inventory[i].IsAir)
+                    {
+                        player.inventory[i] = item;
+                        return true;
+                    }
+                }
+            }
+            for (int i = 49; i >= 0; i--)
+            {
+                if (player.inventory[i].IsAir)
+                {
+                    player.inventory[i] = item;
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }

@@ -140,6 +140,10 @@ namespace ResearchFrom14.Common
                 {
                     destroyingItem.TurnToAir();
                 }
+                else if(ResearchFrom14.PlaceInInventory(player, destroyingItem))
+                {
+                    destroyingItem = new Item();
+                }
 
                 if (GetResearchedAmount(type) < ResearchTable.GetTotalResearch(type))
                 {
@@ -380,6 +384,12 @@ namespace ResearchFrom14.Common
                         inventory[slot].stack = total;
                         destroyingItem.stack = destroyingItem.maxStack;
                     }
+                }
+                else
+                {
+                    Item temp = inventory[slot];
+                    inventory[slot] = destroyingItem;
+                    destroyingItem = temp;
                 }
                 return true;
             }

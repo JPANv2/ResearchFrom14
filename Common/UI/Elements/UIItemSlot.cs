@@ -183,7 +183,14 @@ namespace ResearchFrom14.Common.UI.Elements
         {
             if (IsMouseHovering)
             {
-                if((Main.mouseItem == null || Main.mouseItem.IsAir) && item != null)
+                if (ItemSlot.ShiftInUse && item != null && !item.IsAir)
+                {
+                    if(ResearchFrom14.PlaceInInventory(Main.player[Main.myPlayer], item))
+                    {
+                        realItem = new Item();
+                        Main.player[Main.myPlayer].GetModPlayer<ResearchPlayer>().destroyingItem = realItem;
+                    }
+                }else if((Main.mouseItem == null || Main.mouseItem.IsAir) && item != null)
                 {
                     Main.mouseItem = item;
                     realItem = new Item();
