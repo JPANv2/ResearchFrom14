@@ -31,6 +31,7 @@ namespace ResearchFrom14.Common
             createdTiles = new int[ItemLoader.ItemCount + 1];
             ModLoader.GetMod("ResearchFrom14").Logger.Info("Inititalizing Research System...");
             initTask = Task.Run(FillResearchTable);
+            Task.WaitAny(initTask);
         }
 
         private static void FillResearchTable()
@@ -395,18 +396,18 @@ namespace ResearchFrom14.Common
                      }*/
                     if (!ModContent.GetInstance<Config>().difficultyAffectsExceptions)
                     {
-                        totalResearch[test.type] = (int)Math.Max(Math.Ceiling(totalResearch[test.type] * ModContent.GetInstance<Config>().difficulty), 1);
+                        totalResearch[test.type] = (int)Math.Max(Math.Ceiling(totalResearch[test.type] * ModContent.GetInstance<Config>().difficulty/100f), 1);
                     }
                 }
             }
             ModLoader.GetMod("ResearchFrom14").Logger.Info("Research System: Applying Difficulty...");
-            if (!ModContent.GetInstance<Config>().difficultyAffectsExceptions)
+            if (ModContent.GetInstance<Config>().difficultyAffectsExceptions)
             {
                 for (int i = 1; i < ItemLoader.ItemCount; i++)
                 {
                     if (totalResearch[i] > 0)
                     {
-                        totalResearch[i] = (int)Math.Max(Math.Ceiling(totalResearch[i] * ModContent.GetInstance<Config>().difficulty), 1);
+                        totalResearch[i] = (int)Math.Max(Math.Ceiling(totalResearch[i] * ModContent.GetInstance<Config>().difficulty/100f), 1);
                     }
                 }
             }
@@ -511,7 +512,11 @@ namespace ResearchFrom14.Common
         public static int GetTotalResearch(int type)
         {
             if (totalResearch.Length == 0)
+            {
                 InitResearchTable();
+            }
+            if(initTask != null && !initTask.IsCompleted)
+                Task.WaitAny(initTask);
             if (type < 0 || type > totalResearch.Length)
                 return 0;
             return totalResearch[type];
@@ -807,12 +812,6 @@ namespace ResearchFrom14.Common
                 }
             }
         }
-
-        private static void AddCategory(string v, object wire)
-        {
-            throw new NotImplementedException();
-        }
-
         private static void RT_addCalamity()
         {
             int type = ResearchFrom14.getTypeFromTag("CalamityMod:AncientBoneDust");

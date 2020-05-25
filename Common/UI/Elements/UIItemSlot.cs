@@ -217,6 +217,12 @@ namespace ResearchFrom14.Common.UI.Elements
                             item.stack = item.maxStack;
                         }
                     }
+                    else
+                    {
+                        Item tmp = Main.mouseItem;
+                        Main.mouseItem = item;
+                        item = tmp;
+                    }
                 }
             }
         }
@@ -282,7 +288,8 @@ namespace ResearchFrom14.Common.UI.Elements
                 }
                 else
                 {
-                    Main.mouseItem = new Item();
+                    if(Main.player[Main.myPlayer].GetModPlayer<ResearchPlayer>().IsResearched(Main.mouseItem))
+                        Main.mouseItem = new Item();
                 }
             }
             else if (Main.stackSplit <= 1 && Main.mouseRight)

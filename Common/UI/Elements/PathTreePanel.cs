@@ -31,6 +31,7 @@ namespace ResearchFrom14.Common.UI.Elements
         public override void OnActivate()
         {
             BackgroundColor = Color.Blue;
+            BackgroundColor.A = 196;
             BorderColor = Color.White;
             hasChanged = true;
             internalGrid = new UIGridList();

@@ -19,16 +19,16 @@ namespace ResearchFrom14.Configs
 
 
         [Label("Research Difficulty")]
-        [Tooltip("Multiplier for the number of items one must research to unlock the infinite item. Research ammount will be rounded up, minimum 1 item.")]
-        [Range(0.0f, 100f)]
-        [Increment(.1f)]
-        [DrawTicks]
-        [DefaultValue(1.0f)]
-        public float difficulty;
+        [Tooltip("Percentage of the base number of items one must research to unlock the infinite item. Research ammount will be rounded up, minimum 1 item.")]       
+        [DefaultValue(100)]
+        [Range(1,1000000)]
+        [ReloadRequired]
+        public int difficulty;
 
         [Label("Research Difficult affects Item exceptions")]
         [Tooltip("If false, items in the exception list will not be multiplied by the difficulty multiplier. Default to true.")]
         [DefaultValue(true)]
+        [ReloadRequired]
         public bool difficultyAffectsExceptions;
 
 

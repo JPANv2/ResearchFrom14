@@ -1,4 +1,5 @@
 ﻿
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
@@ -8,6 +9,7 @@ using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.ModLoader;
 using Terraria.ModLoader.UI.Elements;
+using Terraria.UI;
 
 namespace ResearchFrom14.Common.UI
 {
@@ -26,6 +28,9 @@ namespace ResearchFrom14.Common.UI
         UIText loading = new UIText("Loading...");
         Task t = null;
         string search = "";
+        bool tooltipSearch = false;
+
+        public bool invalidatedList = false;
         public RecipePanel(ResearchUI panel)
         {
             parent = panel;
@@ -37,7 +42,8 @@ namespace ResearchFrom14.Common.UI
         public override void OnActivate()
         {
             base.OnActivate();
-            BackgroundColor = Color.LightGreen;
+            BackgroundColor = Color.Blue;
+            BackgroundColor.A = 196;
             BorderColor = Color.White;
             internalGrid = new UIGrid();
             internalGrid.OnScrollWheel += ResearchUI.onScrollWheel;
@@ -60,7 +66,13 @@ namespace ResearchFrom14.Common.UI
 
         public override void Update(GameTime gameTime)
         {
-            if (selected != changer.selected || !parent.search.GetText().Equals(search))
+            if(tooltipSearch != parent.tooltipSearch.doSearch)
+            {
+                tooltipSearch = parent.tooltipSearch.doSearch;
+                invalidatedList = true;
+            }
+
+            if (selected != changer.selected || !parent.search.GetText().Equals(search) || invalidatedList)
             {
                 if (t == null)
                 {
@@ -81,6 +93,7 @@ namespace ResearchFrom14.Common.UI
                     RemoveChild(loading);
                     Append(internalGrid);
                     hasChanges = true;
+                    invalidatedList = false;
                     t = null;
                 }
             }
@@ -114,12 +127,17 @@ namespace ResearchFrom14.Common.UI
 
             ResearchPlayer player = Main.player[Main.myPlayer].GetModPlayer<ResearchPlayer>();
             List<Item> toDisplay = new List<Item>();
+            while (player.waitingForResearchCache())
+            {
+                Task.Yield();
+            }
             foreach (int type in player.researchedCache)
             {
                 Item itm = new Item();
                 itm.SetDefaults(type);
                 itm.stack = 1;
-                if (parent.search.GetText() == null || parent.search.GetText().Length == 0 || itm.Name.ToLower().Contains(parent.search.GetText().ToLower()))
+                if (parent.search.GetText() == null || parent.search.GetText().Length == 0 || itm.Name.ToLower().Contains(parent.search.GetText().ToLower()) ||
+                    (tooltipSearch && condensedTooltip(itm).ToLower().Contains(parent.search.GetText().ToLower())))
                 {
                     toDisplay.Add(itm);
                 }
@@ -151,6 +169,18 @@ namespace ResearchFrom14.Common.UI
                     }
                 }
             }
+        }
+
+        private string condensedTooltip(Item item)
+        {
+            String s = "";
+            item.RebuildTooltip();
+            for(int i = 0; i< item.ToolTip.Lines; i++)
+            {
+                s += item.ToolTip.GetLine(i);
+                s += "\n";
+            }
+            return s;
         }
     }
     public class ItemNameComparer : IComparer<Item>

@@ -48,9 +48,11 @@ namespace ResearchFrom14.Common.Globals
             if (ModContent.GetInstance<Config>().showResearch)
             {
                 ResearchPlayer rp = Main.player[Main.myPlayer].GetModPlayer<ResearchPlayer>();
-                if (rp.IsResearched(item) && ModContent.GetInstance<Config>().showResearched)
-                {
-                    tooltips.Add(new TooltipLine(this.mod, "Research", "Researched!") { overrideColor = Color.Lerp(Color.HotPink, Color.White, 0.1f) });
+                if (rp.IsResearched(item)){
+                    if (ModContent.GetInstance<Config>().showResearched)
+                    {
+                        tooltips.Add(new TooltipLine(this.mod, "Research", "Resarched!") { overrideColor = Color.Lerp(Color.HotPink, Color.White, 0.1f) });
+                    }
                 }
                 else
                 {

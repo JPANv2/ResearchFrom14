@@ -15,6 +15,8 @@ namespace ResearchFrom14.Common.UI
         public ResearchSlot destroySlot;
         public UIText totalText;
         public SearchUITextBox search;
+        public TooltipSearchButton tooltipSearch;
+        public ClearTextButton clearText;
         public ResearchButton destroyButton;
         public CloseButton closeButton;
         public PathTreePanel categories;
@@ -64,6 +66,24 @@ namespace ResearchFrom14.Common.UI
 
             panel.Append(destroyButton);
 
+            tooltipSearch = new TooltipSearchButton();
+            tooltipSearch.BackgroundColor = Color.Blue;
+            tooltipSearch.Top.Set(search.Top.Pixels + search.Height.Pixels + 2, 0);
+            tooltipSearch.Left.Set(destroyButton.Left.Pixels + destroyButton.Width.Pixels + 24, 0);
+            tooltipSearch.Height.Set(destroySlot.GetInnerDimensions().Height / 2, 0);
+            tooltipSearch.Width.Set(search.Width.Pixels / 6, 0);
+
+            panel.Append(tooltipSearch);
+
+            clearText = new ClearTextButton(search);
+            clearText.BackgroundColor = Color.Blue;
+            clearText.Top.Set(search.Top.Pixels + search.Height.Pixels + 2, 0);
+            clearText.Left.Set(tooltipSearch.Left.Pixels + tooltipSearch.Width.Pixels + 24, 0);
+            clearText.Height.Set(destroySlot.GetInnerDimensions().Height / 2, 0);
+            clearText.Width.Set(search.Width.Pixels / 6, 0);
+
+            panel.Append(clearText);
+
             closeButton = new CloseButton();
             closeButton.Top.Set(search.Top.Pixels + search.Height.Pixels + 2, 0);
             closeButton.Left.Set(panel.GetInnerDimensions().Width - 20, 0);
@@ -106,6 +126,16 @@ namespace ResearchFrom14.Common.UI
 
             totalText.Top.Set(destroySlot.Height.Pixels+6, 0f);
             totalText.Left.Set(20, 0f);
+
+            tooltipSearch.Top.Set(search.Top.Pixels + search.Height.Pixels + 2, 0);
+            tooltipSearch.Left.Set(destroyButton.Left.Pixels + destroyButton.Width.Pixels + 24, 0);
+            tooltipSearch.Height.Set(destroySlot.GetInnerDimensions().Height / 2, 0);
+            tooltipSearch.Width.Set(search.Width.Pixels / 6, 0);
+
+            clearText.Top.Set(search.Top.Pixels + search.Height.Pixels + 2, 0);
+            clearText.Left.Set(tooltipSearch.Left.Pixels + tooltipSearch.Width.Pixels + 24, 0);
+            clearText.Height.Set(destroySlot.GetInnerDimensions().Height / 2, 0);
+            clearText.Width.Set(search.Width.Pixels / 6, 0);
 
             closeButton.Top.Set(search.Top.Pixels + search.Height.Pixels + 2, 0);
             closeButton.Left.Set(panel.GetInnerDimensions().Width - 20, 0);

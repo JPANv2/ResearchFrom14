@@ -147,8 +147,17 @@ namespace ResearchFrom14
                     {
                         Main.player[player].GetModPlayer<ResearchPlayer>().research[read.Key] = tempResearch.GetAsInt(read.Key);
                     }
+                    Main.player[player].GetModPlayer<ResearchPlayer>().dirtyCache = true;
+                    Main.player[player].GetModPlayer<ResearchPlayer>().RebuildCache();
                     return;
                 }
+            }
+            if(messageID == 1)
+            {
+                int player = reader.ReadByte();
+                Main.player[player].GetModPlayer<ResearchPlayer>().dirtyCache = true;
+                Main.player[player].GetModPlayer<ResearchPlayer>().RebuildCache();
+                return;
             }
 
         }
