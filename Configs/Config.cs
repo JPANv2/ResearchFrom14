@@ -31,6 +31,10 @@ namespace ResearchFrom14.Configs
         [ReloadRequired]
         public bool difficultyAffectsExceptions;
 
+        [Label("Research when shift-clicked")]
+        [Tooltip("When you shift-click an item into the Research slot, automatically research it, instead of having to manually click the research button.")]
+        [DefaultValue(false)]
+        public bool autoShiftResearch;
 
         [Label("Tentative Summon Item Detection Drop")]
         [Tooltip("Most boss summon items have a distinct pattern that, while not exclusive to summon items, are a pretty good indication of them. Disable this if items used by holding are being given a boss summon value.")]

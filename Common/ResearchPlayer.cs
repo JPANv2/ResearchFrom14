@@ -128,6 +128,7 @@ namespace ResearchFrom14.Common
                         }
                     }
                     ((ResearchFrom14)mod).ui.recipes.invalidatedList = true;
+                    ((ResearchFrom14)mod).ui.recipes.changedToList = true;
                 }
             }
         }
@@ -164,6 +165,7 @@ namespace ResearchFrom14.Common
             if (ResearchUI.visible)
             {
                 ((ResearchFrom14)mod).ui.recipes.invalidatedList = true;
+                ((ResearchFrom14)mod).ui.recipes.changedToList = true;
             }
             mod.Logger.Info("Player " + player.name + "'s Cache knows " + researchedCache.Count + " Items");
 
@@ -196,6 +198,7 @@ namespace ResearchFrom14.Common
                     Main.PlaySound(SoundID.Item4);
                     researchedCache.Add(type);
                     ((ResearchFrom14)mod).ui.recipes.invalidatedList = true;
+                    ((ResearchFrom14)mod).ui.recipes.changedToList = true;
                     if (ModContent.GetInstance<Config>().researchRecipes)
                     {
                         Item itm = new Item();
@@ -434,6 +437,8 @@ namespace ResearchFrom14.Common
                     inventory[slot] = destroyingItem;
                     destroyingItem = temp;
                 }
+                if (ModContent.GetInstance<Config>().autoShiftResearch)
+                    Research();
                 return true;
             }
             return false;

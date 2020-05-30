@@ -31,6 +31,7 @@ namespace ResearchFrom14.Common.UI
         bool tooltipSearch = false;
 
         public bool invalidatedList = false;
+        private bool changedToList = false;
         public RecipePanel(ResearchUI panel)
         {
             parent = panel;
@@ -70,6 +71,7 @@ namespace ResearchFrom14.Common.UI
             {
                 tooltipSearch = parent.tooltipSearch.doSearch;
                 invalidatedList = true;
+                changedToList = true;
             }
 
             if (selected != changer.selected || !parent.search.GetText().Equals(search) || invalidatedList)
@@ -83,7 +85,12 @@ namespace ResearchFrom14.Common.UI
                     loading.HAlign = 0.45f;
                     Append(loading);
                     t = Task.Run(recreateList);
-                    
+                }
+                else
+                {
+                    selected = changer.selected;
+                    search = parent.search.GetText();
+                    changedToList = true;
                 }
             }
             if (t != null)
@@ -94,6 +101,7 @@ namespace ResearchFrom14.Common.UI
                     Append(internalGrid);
                     hasChanges = true;
                     invalidatedList = false;
+                    t.Dispose();
                     t = null;
                 }
             }
@@ -119,7 +127,7 @@ namespace ResearchFrom14.Common.UI
 
         public void recreateList()
         {
-            internalGrid.Clear();
+            
             internalGrid.Left.Set(0, 0);
             internalGrid.Top.Set(0, 0);
             internalGrid.Width.Set(this.Width.Pixels - 4, 0);
@@ -131,6 +139,11 @@ namespace ResearchFrom14.Common.UI
             {
                 Task.Yield();
             }
+            restart:
+            changedToList = false;
+            toDisplay.Clear();
+            internalGrid.Clear();
+
             foreach (int type in player.researchedCache)
             {
                 Item itm = new Item();
@@ -141,6 +154,8 @@ namespace ResearchFrom14.Common.UI
                 {
                     toDisplay.Add(itm);
                 }
+                if (changedToList)
+                    goto restart;
             }
             toDisplay.Sort(new ItemNameComparer());
 
@@ -149,6 +164,8 @@ namespace ResearchFrom14.Common.UI
                 foreach (Item itm in toDisplay)
                 {
                     internalGrid.Add(new PurchaseItemSlot(itm));
+                    if (changedToList)
+                        goto restart;
                 }
             }
             else
@@ -156,16 +173,18 @@ namespace ResearchFrom14.Common.UI
                 if (ResearchTable.category.ContainsKey(selected.getFullPath()))
                 {
                     // ModLoader.GetMod("ResearchFrom14").Logger.Info("Category " + selected.getFullPath() + " has items:");
-                    foreach (int cat in ResearchTable.category[selected.getFullPath()])
+                   /* foreach (int cat in ResearchTable.category[selected.getFullPath()])
                     {
                         Item test = new Item();
                         test.SetDefaults(cat);
                         //   ModLoader.GetMod("ResearchFrom14").Logger.Info("  - " + test.Name + " ( id " + test.type + " = "+cat + ")" );   
-                    }
+                    }*/
                     foreach (Item itm in toDisplay)
                     {
                         if (ResearchTable.category[selected.getFullPath()].Contains(itm.type))
                             internalGrid.Add(new PurchaseItemSlot(itm));
+                        if (changedToList)
+                            goto restart;
                     }
                 }
             }

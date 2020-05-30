@@ -51,16 +51,38 @@ namespace ResearchFrom14.Common
 
             addExceptionalItems();
 
+            Type typeOfLoader = typeof(ItemLoader);
+            FieldInfo info = typeOfLoader.GetField("HookSetDefaults", BindingFlags.NonPublic | BindingFlags.Static);
+            object hookValue = info.GetValue(null);
+            Type HookInfo = hookValue.GetType();
+            //ModLoader.GetMod("ResearchFrom14").Logger.Warn("Hook is " + HookInfo);
+            FieldInfo hookAdd = HookInfo.GetField("arr", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
+            //ModLoader.GetMod("ResearchFrom14").Logger.Warn("Hookadd is " + hookAdd);
+            object globals = hookAdd.GetValue(hookValue);
+
             for (int i = 1; i < ItemLoader.ItemCount; i++)
             {
                 createdTiles[i] = -1;
                 if (totalResearch[i] == 0)
                 {
                     Item test = new Item();
-                    test.SetDefaults(i);
+                    try
+                    {
+                        test.SetDefaults(i);
+                    }catch(Exception ex)
+                    {
+                        ModLoader.GetMod("ResearchFrom14").Logger.Warn("Item id: " + i + " Threw an exception on SetDefaults and will be unresearchable:\n" + ex.StackTrace);
+                        totalResearch[i] = -1;
+                        continue;
+                    }
                     if (test.type == 0)
                     {
                         totalResearch[i] = -1;
+                        continue;
+                    }
+                    if (totalResearch[test.type] != 0)
+                    {
+                        totalResearch[i] = totalResearch[test.type];
                         continue;
                     }
                     if (test.maxStack == 1)
@@ -377,7 +399,12 @@ namespace ResearchFrom14.Common
                             totalResearch[test.type] = 25;
                         }
                     }
-                    totalResearch[test.type] = Math.Min(totalResearch[test.type], test.maxStack);
+                    hookAdd.SetValue(hookValue, new GlobalItem[0]);
+                    Item test2 = new Item();
+                    test2.SetDefaults(test.type);
+                    totalResearch[test.type] = Math.Min(totalResearch[test.type], test2.maxStack);
+                    hookAdd.SetValue(hookValue, globals);
+
                     if (test.consumable)
                     {
                         AddCategory("Consumable", test.type);
@@ -492,6 +519,8 @@ namespace ResearchFrom14.Common
         {
             if (test.type >= 3318 && test.type <= 3332)
                 return true;
+            if (test.type == ItemID.BossBagBetsy)
+                return true;
             if(test.modItem != null)
             {
                 return (test.modItem.BossBagNPC > 0);
@@ -554,6 +583,7 @@ namespace ResearchFrom14.Common
             RT_addTraps();
             RT_addFish();
             RT_addCalamity();
+            RT_addBrokenHeroStuff();
             for (int i = ItemID.CopperCoin; i <= ItemID.PlatinumCoin; i++)
             {
                 if (totalResearch[i] == 0)
@@ -685,6 +715,22 @@ namespace ResearchFrom14.Common
                 AddCategory("Materials", ItemID.Ectoplasm);
             }
 
+            if (totalResearch[ItemID.MechanicalWagonPiece] == 0)
+            {
+                totalResearch[ItemID.MechanicalWagonPiece] = 1;
+                AddCategory("Materials", ItemID.MechanicalWagonPiece);
+            }
+            if (totalResearch[ItemID.MechanicalWheelPiece] == 0)
+            {
+                totalResearch[ItemID.MechanicalWheelPiece] = 1;
+                AddCategory("Materials", ItemID.MechanicalWheelPiece);
+            }
+            if (totalResearch[ItemID.MechanicalBatteryPiece] == 0)
+            {
+                totalResearch[ItemID.MechanicalBatteryPiece] = 1;
+                AddCategory("Materials", ItemID.MechanicalBatteryPiece);
+            }
+
             for (int i = ItemID.GiantHarpyFeather; i <= ItemID.TatteredBeeWing; i++)
             {
                 if (totalResearch[i] == 0)
@@ -732,21 +778,8 @@ namespace ResearchFrom14.Common
                 totalResearch[ItemID.AncientBattleArmorMaterial] = 3;
                 AddCategory("Materials", ItemID.AncientBattleArmorMaterial);
             }
-            if (totalResearch[ItemID.BrokenHeroSword] == 0)
-            {
-                totalResearch[ItemID.BrokenHeroSword] = 1;
-                AddCategory("Materials", ItemID.BrokenHeroSword);
-            }
-            int type = ResearchFrom14.getTypeFromTag("ThoriumMod:BrokenHeroFragment");
-            if (type > 0)
-            {
-                if (totalResearch[type] == 0)
-                {
-                    totalResearch[type] = 1;
-                    AddCategory("Materials", type);
-                }
-            }
-            type = ResearchFrom14.getTypeFromTag("ThoriumMod:MalignantThread");
+            
+            int type = ResearchFrom14.getTypeFromTag("ThoriumMod:MalignantThread");
             if (type > 0)
             {
                 if (totalResearch[type] == 0)
@@ -811,7 +844,61 @@ namespace ResearchFrom14.Common
                     AddCategory("Boss Bags and Summons", type);
                 }
             }
+
+            type = ResearchFrom14.getTypeFromTag("ThoriumMod:BrokenDarksteelHelmet");
+            if (type > 0)
+            {
+                if (totalResearch[type] == 0)
+                {
+                    totalResearch[type] = 1;
+                    AddCategory("Material", type);
+                }
+            }
+
+            type = ResearchFrom14.getTypeFromTag("AlchemistNPC:PerfectionToken");
+            if (type > 0)
+            {
+                if (totalResearch[type] == 0)
+                {
+                    totalResearch[type] = 5;
+                    AddCategory("Material", type);
+                }
+            }
         }
+
+        private static void RT_addBrokenHeroStuff()
+        {
+            if (totalResearch[ItemID.BrokenHeroSword] == 0)
+            {
+                totalResearch[ItemID.BrokenHeroSword] = 1;
+                AddCategory("Materials", ItemID.BrokenHeroSword);
+            }
+            List<int> brokens = new List<int>()
+            {
+                ResearchFrom14.getTypeFromTag("ThoriumMod:BrokenHeroFragment"),
+                ResearchFrom14.getTypeFromTag("bowmod:BrokenBow"),
+                ResearchFrom14.getTypeFromTag("LithosArmory:BrokenHeroFlail"),
+                ResearchFrom14.getTypeFromTag("LithosArmory:BrokenHeroGreatbow"),
+                ResearchFrom14.getTypeFromTag("LithosArmory:BrokenHeroShotgun"),
+                ResearchFrom14.getTypeFromTag("LithosArmory:BrokenHeroSling"),
+                ResearchFrom14.getTypeFromTag("LithosArmory:BrokenHeroSpear"),
+                ResearchFrom14.getTypeFromTag("LithosArmory:BrokenHeroWand"),
+                ResearchFrom14.getTypeFromTag("LithosArmory:TatteredHeroGlove"),
+                ResearchFrom14.getTypeFromTag("LithosArmory:TornHeroTome"),
+                ResearchFrom14.getTypeFromTag("LithosArmory:MysteriousCell")
+            };
+            foreach (int type in brokens) {
+                if (type > 0)
+                {
+                    if (totalResearch[type] == 0)
+                    {
+                        totalResearch[type] = 1;
+                        AddCategory("Materials", type);
+                    }
+                }
+            }
+        }
+
         private static void RT_addCalamity()
         {
             int type = ResearchFrom14.getTypeFromTag("CalamityMod:AncientBoneDust");
@@ -887,6 +974,16 @@ namespace ResearchFrom14.Common
                     AddCategory("Materials", type);
                 }
             }
+
+            type = ResearchFrom14.getTypeFromTag("CalamityMod:Lumenite");
+            if (type > 0)
+            {
+                if (totalResearch[type] == 0)
+                {
+                    totalResearch[type] = 25;
+                    AddCategory("Materials", type);
+                }
+            }
             type = ResearchFrom14.getTypeFromTag("CalamityMod:GypsyPowder");
             if (type > 0)
             {
@@ -896,6 +993,16 @@ namespace ResearchFrom14.Common
                     AddCategory("Materials", type);
                 }
             }
+            type = ResearchFrom14.getTypeFromTag("CalamityMod:BlightedLens");
+            if (type > 0)
+            {
+                if (totalResearch[type] == 0)
+                {
+                    totalResearch[type] = 15;
+                    AddCategory("Materials", type);
+                }
+            }
+
             type = ResearchFrom14.getTypeFromTag("CalamityMod:DriedSeafood");
             if (type > 0)
             {
@@ -921,6 +1028,16 @@ namespace ResearchFrom14.Common
                 if (totalResearch[type] == 0)
                 {
                     totalResearch[type] = 3;
+                    AddCategory("Boss Bags and Summons", type);
+                }
+            }
+
+            type = ResearchFrom14.getTypeFromTag("CalamityMod:AridArtifact");
+            if (type > 0)
+            {
+                if (totalResearch[type] == 0)
+                {
+                    totalResearch[type] = 1;
                     AddCategory("Boss Bags and Summons", type);
                 }
             }
@@ -951,6 +1068,45 @@ namespace ResearchFrom14.Common
                 {
                     totalResearch[i] = 3;
                     AddCategory("Junk", i);
+                }
+            }
+
+            int type = ResearchFrom14.getTypeFromTag("ThoriumMod:MagmaGill");
+            if (type > 0)
+            {
+                if (totalResearch[type] == 0)
+                {
+                    totalResearch[type] = 5;
+                    AddCategory("Fish", type);
+                }
+            }
+            type = ResearchFrom14.getTypeFromTag("ThoriumMod:FlamingCrackGut");
+            if (type > 0)
+            {
+                if (totalResearch[type] == 0)
+                {
+                    totalResearch[type] = 5;
+                    AddCategory("Fish", type);
+                }
+            }
+
+            type = ResearchFrom14.getTypeFromTag("ThoriumMod:ScorchedBone");
+            if (type > 0)
+            {
+                if (totalResearch[type] == 0)
+                {
+                    totalResearch[type] = 3;
+                    AddCategory("Junk", type);
+                }
+            }
+
+            type = ResearchFrom14.getTypeFromTag("ThoriumMod:IgneousRock");
+            if (type > 0)
+            {
+                if (totalResearch[type] == 0)
+                {
+                    totalResearch[type] = 3;
+                    AddCategory("Junk", type);
                 }
             }
         }
@@ -1097,6 +1253,7 @@ namespace ResearchFrom14.Common
                 totalResearch[ItemID.ShadowKey] = 1;
                 AddCategory("Keys", ItemID.ShadowKey);
             }
+
             for (int i = ItemID.JungleKey; i <= ItemID.FrozenKey; i++)
             {
                 if (totalResearch[i] == 0)
@@ -1105,6 +1262,7 @@ namespace ResearchFrom14.Common
                     AddCategory("Keys", i);
                 }
             }
+
             int type = ResearchFrom14.getTypeFromTag("ThoriumMod:DesertBiomeKey");
             if (type > 0)
             {

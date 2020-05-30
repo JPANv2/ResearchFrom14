@@ -130,7 +130,16 @@ namespace ResearchFrom14
         public static string ItemIDToTag(int id)
         {
             Item itm = new Item();
-            itm.SetDefaults(id, true);
+            try
+            {
+                itm.SetDefaults(id, true);
+            }
+            catch (Exception ex)
+            {
+                ModLoader.GetMod("ResearchFrom14").Logger.Warn("Item id: " + id + " Threw an exception on SetDefaults:\n" + ex.StackTrace);
+                return "";
+            }
+            
             return ItemToTag(itm);
         }
 

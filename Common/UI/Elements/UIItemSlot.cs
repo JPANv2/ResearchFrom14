@@ -220,7 +220,9 @@ namespace ResearchFrom14.Common.UI.Elements
                     else
                     {
                         Item tmp = Main.mouseItem;
-                        Main.mouseItem = item;
+                        Main.mouseItem = realItem;
+                        realItem = tmp;
+                        Main.player[Main.myPlayer].GetModPlayer<ResearchPlayer>().destroyingItem = tmp;
                         item = tmp;
                     }
                 }
