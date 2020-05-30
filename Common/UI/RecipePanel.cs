@@ -31,7 +31,7 @@ namespace ResearchFrom14.Common.UI
         bool tooltipSearch = false;
 
         public bool invalidatedList = false;
-        private bool changedToList = false;
+        public bool changedToList = false;
         public RecipePanel(ResearchUI panel)
         {
             parent = panel;

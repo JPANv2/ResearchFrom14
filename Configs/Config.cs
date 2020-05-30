@@ -36,6 +36,11 @@ namespace ResearchFrom14.Configs
         [DefaultValue(false)]
         public bool autoShiftResearch;
 
+        [Label("Craft from Researched stations")]
+        [Tooltip("If true, will allow use of the researched crafting stations as if they were around the player.")]
+        [DefaultValue(false)]
+        public bool allowCraftFromResearch;
+
         [Label("Tentative Summon Item Detection Drop")]
         [Tooltip("Most boss summon items have a distinct pattern that, while not exclusive to summon items, are a pretty good indication of them. Disable this if items used by holding are being given a boss summon value.")]
         [DefaultValue(true)]

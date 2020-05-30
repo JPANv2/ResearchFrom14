@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading.Tasks;
 using ResearchFrom14.Common.UI;
 using ResearchFrom14.Configs;
@@ -18,9 +19,12 @@ namespace ResearchFrom14.Common
         public TagCompound research = new TagCompound();
         public Item destroyingItem = new Item();
         public List<int> researchedCache = new List<int>();
+        public List<int> researchedTileCache = new List<int>();
+        public bool[] researchedTileAdj = new bool[TileLoader.TileCount];
 
         private Task populateCache = null;
         public bool dirtyCache = false;
+        public bool rebuildingCache = false;
         public bool IsResearched(String itemTag)
         {
             int res = ResearchTable.GetTotalResearch(itemTag);
@@ -101,6 +105,7 @@ namespace ResearchFrom14.Common
             {
                 if (!researchedCache.Contains(type))
                 {
+                    rebuildingCache = true;
                     Item itm = new Item();
                     itm.SetDefaults(type);
                     AddResearchedAmount(type, Int32.MaxValue - 1000);
@@ -109,13 +114,17 @@ namespace ResearchFrom14.Common
                     {
                         if (itm.createTile >= 0)
                         {
-                            RecipeFinder rf = new RecipeFinder();
-                            rf.AddTile(itm.createTile);
-                            List<Recipe> res = rf.SearchRecipes();
-                            // Main.NewText("Found " + res.Count + "recipes with tile.");
-                            foreach (Recipe r in res)
+                            List<int> tiles = AdjTiles(itm.createTile);
+                            foreach (int t in tiles)
                             {
-                                validateAndResearchRecipe(r);
+                                RecipeFinder rf = new RecipeFinder();
+                                rf.AddTile(t);
+                                List<Recipe> res = rf.SearchRecipes();
+                                // Main.NewText("Found " + res.Count + "recipes with tile.");
+                                foreach (Recipe r in res)
+                                {
+                                    validateAndResearchRecipe(r);
+                                }
                             }
                         }
                         RecipeFinder rf2 = new RecipeFinder();
@@ -127,8 +136,10 @@ namespace ResearchFrom14.Common
                             validateAndResearchRecipe(r);
                         }
                     }
+                    rebuildingCache = false;
                     ((ResearchFrom14)mod).ui.recipes.invalidatedList = true;
                     ((ResearchFrom14)mod).ui.recipes.changedToList = true;
+
                 }
             }
         }
@@ -152,23 +163,104 @@ namespace ResearchFrom14.Common
 
         private void actualRebuildCache()
         {
+            rebuildCacheReset:
+            rebuildingCache = true;
+            dirtyCache = false;
+            researchedCache.Clear();
+            researchedTileCache.Clear();
+            researchedTileAdj = new bool[TileLoader.TileCount];
             for (int i = 0; i < ItemLoader.ItemCount; i++)
             {
                 if (IsResearched(i))
+                {
                     researchedCache.Add(i);
+                    Item itm = new Item();
+                    try
+                    {
+                        itm.SetDefaults(i);
+                        if (itm.createTile >= 0)
+                            AdjTiles(itm.createTile);
+
+                    }catch (Exception ex)
+                    {
+                        mod.Logger.Warn("Item " + i +" threw excetpion during setDefaults:\n"+ ex.ToString() +"\n"+  ex.StackTrace);
+                    }
+                    
+                }
+                
+                if (dirtyCache)
+                    goto rebuildCacheReset;
             }
-            if (dirtyCache)
-            {
-                dirtyCache = false;
-                actualRebuildCache();
-            }
-            if (ResearchUI.visible)
-            {
-                ((ResearchFrom14)mod).ui.recipes.invalidatedList = true;
-                ((ResearchFrom14)mod).ui.recipes.changedToList = true;
-            }
+            
+            ((ResearchFrom14)mod).ui.recipes.invalidatedList = true;
+            ((ResearchFrom14)mod).ui.recipes.changedToList = true;
+            rebuildingCache = false;
             mod.Logger.Info("Player " + player.name + "'s Cache knows " + researchedCache.Count + " Items");
 
+        }
+
+        private List<int> AdjTiles(int type)
+        {
+            List<int> ans = new List<int>() { type };
+            if (!researchedTileCache.Contains(type))  
+                researchedTileCache.Add(type);
+
+            researchedTileAdj[type] = true;
+
+            if (type == 302 || type == 77 || type == 133)
+            {
+                ans.AddRange(AdjTiles(17));
+            }
+            if (type == 133)
+            {
+                ans.AddRange(AdjTiles(77));
+            }
+            if (type == 134)
+            {
+                ans.AddRange(AdjTiles(16));
+            }
+            if (type == 354 ||type == 469 || type == 355)
+            {
+                ans.AddRange(AdjTiles(14));
+            }
+            if (type == 355)
+            {
+                ans.AddRange(AdjTiles(13));
+            }
+            List<int>ans2 = new List<int>();
+            foreach(int i in ans)
+            {
+                if (!ans2.Contains(i))
+                    ans2.Add(i);
+            }
+            ans = ans2;
+            ModTile tile = TileLoader.GetTile(type);
+            if (tile != null)
+            {
+                foreach (int num in tile.adjTiles)
+                {
+                    if (!ans.Contains(num))
+                        ans.Add(num);
+                    if (!researchedTileCache.Contains(num))
+                        researchedTileCache.Add(num);
+                    researchedTileAdj[num] = true;
+                }
+            }
+            Type typeOfLoader = typeof(TileLoader);
+            FieldInfo info = typeOfLoader.GetField("HookAdjTiles", BindingFlags.NonPublic | BindingFlags.Static);
+            Func<int, int[]>[] hookAdjTiles = (Func<int, int[]>[])info.GetValue(null);
+            for (int i = 0; i < hookAdjTiles.Length; i++)
+            {
+                foreach (int num2 in hookAdjTiles[i](type))
+                {
+                    if (!ans.Contains(num2))
+                        ans.Add(num2);
+                    if (!researchedTileCache.Contains(num2))
+                        researchedTileCache.Add(num2);
+                    researchedTileAdj[num2] = true;
+                }
+            }
+            return ans;
         }
 
         public void Research()
@@ -196,6 +288,7 @@ namespace ResearchFrom14.Common
                 else
                 {
                     Main.PlaySound(SoundID.Item4);
+                    rebuildingCache = true;
                     researchedCache.Add(type);
                     ((ResearchFrom14)mod).ui.recipes.invalidatedList = true;
                     ((ResearchFrom14)mod).ui.recipes.changedToList = true;
@@ -203,15 +296,20 @@ namespace ResearchFrom14.Common
                     {
                         Item itm = new Item();
                         itm.SetDefaults(type);
+                        
                         if(itm.createTile >= 0)
                         {
-                            RecipeFinder rf = new RecipeFinder();
-                            rf.AddTile(itm.createTile);
-                            List<Recipe> res = rf.SearchRecipes();
-                           // Main.NewText("Found " + res.Count + "recipes with tile.");
-                            foreach (Recipe r in res)
+                            List<int> tiles = AdjTiles(itm.createTile);
+                            foreach (int t in tiles)
                             {
-                                validateAndResearchRecipe(r);
+                                RecipeFinder rf = new RecipeFinder();
+                                rf.AddTile(t);
+                                List<Recipe> res = rf.SearchRecipes();
+                                // Main.NewText("Found " + res.Count + "recipes with tile.");
+                                foreach (Recipe r in res)
+                                {
+                                    validateAndResearchRecipe(r);
+                                }
                             }
                         }
                         RecipeFinder rf2 = new RecipeFinder();
@@ -223,6 +321,7 @@ namespace ResearchFrom14.Common
                             validateAndResearchRecipe(r);
                         }
                     }
+                    rebuildingCache = false;
                 }
             }
         }
@@ -242,87 +341,17 @@ namespace ResearchFrom14.Common
                tiles[t] = r.requiredTile[t];
                 //Main.NewText("Req tile = " + tiles[t]);
             }
-            bool ending = true;
             if (tiles.Length > 0)
             {
-                foreach (int i in researchedCache) 
+                for(int i = 0; i< tiles.Length; i++)
                 {
-                    if (ResearchTable.createdTiles[i] > -1)
+                    if(tiles[i] >= 0)
                     {
-                        ModTile target = TileLoader.GetTile(ResearchTable.createdTiles[i]);
-                        for (int t = 0; t < tiles.Length; t++)
-                        {
-                            if(tiles[t] == ResearchTable.createdTiles[i])
-                            {
-                               // Main.NewText("Found tile = " + tiles[t]);
-                                tiles[t] = -1;
-                                goto label_foundTile;
-                            }
-                            ModTile source = TileLoader.GetTile(tiles[t]);
-                            if(target != null && target.adjTiles!= null && target.adjTiles.Length > 0)
-                            {
-                                foreach (int adj in target.adjTiles){
-                                    if (tiles[t] == adj)
-                                    {
-                                    //    Main.NewText("Found tile adj= " + tiles[t] + " : " + adj);
-                                        tiles[t] = -1;
-                                        goto label_foundTile;
-                                    }
-                                }
-                                if (source != null && source.adjTiles != null && source.adjTiles.Length > 0)
-                                {
-                                    foreach (int adj1 in target.adjTiles)
-                                    {
-                                        foreach (int adj2 in source.adjTiles)
-                                        {
-                                            if (adj1 == adj2)
-                                            {
-                                            //    Main.NewText("Found tile adj2 = " + adj1 + " : " + adj2);
-                                                tiles[t] = -1;
-                                                goto label_foundTile;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            else if(source != null)
-                            {
-                                foreach (int adj2 in source.adjTiles)
-                                {
-                                    if (ResearchTable.createdTiles[i] == adj2)
-                                    {
-                                      //  Main.NewText("Found tile adj= " + tiles[t] + " : " + adj2);
-                                        tiles[t] = -1;
-                                        goto label_foundTile;
-                                    }
-                                }
-                            }
-                            label_foundTile:
-                            continue;
-                        }
-                        ending = true;
-                        for(int t = 0; t< tiles.Length; t++)
-                        {
-                            ending = ending && tiles[t] == -1;
-                        }
-                        if (ending)
-                        {
-                            goto label_checkIngredients;
-                        }
+                        if (tiles[i] >= researchedTileAdj.Length)
+                            return;
+                        if (!researchedTileAdj[tiles[i]])
+                            return;
                     }
-                }
-                ending = true;
-                for (int t = 0; t < tiles.Length; t++)
-                {
-                    ending = ending && tiles[t] == -1;
-                }
-                if (ending)
-                {
-                    goto label_checkIngredients;
-                }
-                else
-                {
-                    return;
                 }
             }
 
@@ -388,22 +417,26 @@ namespace ResearchFrom14.Common
                 itm.SetDefaults(r.createItem.type);
                 if (itm.createTile >= 0)
                 {
-                    RecipeFinder rf = new RecipeFinder();
-                    rf.AddTile(itm.createTile);
-                    List<Recipe> res = rf.SearchRecipes();
-                    //Main.NewText("Found " + res.Count + "recipes with tile.");
-                    foreach (Recipe r2 in res)
+                    List<int> tiless = AdjTiles(itm.createTile);
+                    foreach (int t in tiless)
                     {
-                        validateAndResearchRecipe(r2);
+                        RecipeFinder rf = new RecipeFinder();
+                        rf.AddTile(t);
+                        List<Recipe> res = rf.SearchRecipes();
+                        // Main.NewText("Found " + res.Count + "recipes with tile.");
+                        foreach (Recipe r2 in res)
+                        {
+                            validateAndResearchRecipe(r2);
+                        }
                     }
                 }
                 RecipeFinder rf2 = new RecipeFinder();
                 rf2.AddIngredient(itm.type);
                 List<Recipe> res2 = rf2.SearchRecipes();
-               // Main.NewText("Found " + res2.Count + "recipes with item.");
+                // Main.NewText("Found " + res2.Count + "recipes with item.");
                 foreach (Recipe r2 in res2)
                 {
-                    validateAndResearchRecipe(r2);
+                    validateAndResearchRecipe(r);
                 }
             }
         }
