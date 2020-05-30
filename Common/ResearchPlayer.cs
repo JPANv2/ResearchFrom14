@@ -431,12 +431,12 @@ namespace ResearchFrom14.Common
                     }
                 }
                 RecipeFinder rf2 = new RecipeFinder();
-                rf2.AddIngredient(itm.type);
+                rf2.AddIngredient(r.createItem.type);
                 List<Recipe> res2 = rf2.SearchRecipes();
                 // Main.NewText("Found " + res2.Count + "recipes with item.");
                 foreach (Recipe r2 in res2)
                 {
-                    validateAndResearchRecipe(r);
+                    validateAndResearchRecipe(r2);
                 }
             }
         }
