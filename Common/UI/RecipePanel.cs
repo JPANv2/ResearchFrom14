@@ -30,7 +30,6 @@ namespace ResearchFrom14.Common.UI
         string search = "";
         bool tooltipSearch = false;
 
-        public bool invalidatedList = false;
         public bool changedToList = false;
         public RecipePanel(ResearchUI panel)
         {
@@ -70,16 +69,15 @@ namespace ResearchFrom14.Common.UI
             if(tooltipSearch != parent.tooltipSearch.doSearch)
             {
                 tooltipSearch = parent.tooltipSearch.doSearch;
-                invalidatedList = true;
                 changedToList = true;
             }
 
-            if (selected != changer.selected || !parent.search.GetText().Equals(search) || invalidatedList)
+            if (selected != changer.selected || !parent.search.GetText().Equals(search) || changedToList)
             {
                 if (t == null)
                 {
                     selected = changer.selected;
-                    search = parent.search.GetText();
+                    search = parent.search.GetText();                    
                     RemoveChild(internalGrid);
                     loading.VAlign = 0.5f;
                     loading.HAlign = 0.45f;
@@ -100,7 +98,6 @@ namespace ResearchFrom14.Common.UI
                     RemoveChild(loading);
                     Append(internalGrid);
                     hasChanges = true;
-                    invalidatedList = false;
                     t.Dispose();
                     t = null;
                 }

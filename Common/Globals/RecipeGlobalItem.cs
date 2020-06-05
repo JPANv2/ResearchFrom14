@@ -51,7 +51,7 @@ namespace ResearchFrom14.Common.Globals
                 if (rp.IsResearched(item)){
                     if (ModContent.GetInstance<Config>().showResearched)
                     {
-                        tooltips.Add(new TooltipLine(this.mod, "Research", "Resarched!") { overrideColor = Color.Lerp(Color.HotPink, Color.White, 0.1f) });
+                        tooltips.Add(new TooltipLine(this.mod, "Research", "Researched!") { overrideColor = Color.Lerp(Color.HotPink, Color.White, 0.1f) });
                     }
                 }
                 else

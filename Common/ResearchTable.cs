@@ -808,6 +808,16 @@ namespace ResearchFrom14.Common
                 }
             }
 
+            type = ResearchFrom14.getTypeFromTag("ThoriumMod:CrystalWave");
+            if (type > 0)
+            {
+                if (totalResearch[type] == 0)
+                {
+                    totalResearch[type] = 10;
+                    AddCategory("Stat Ups", type);
+                }
+            }
+
             type = ResearchFrom14.getTypeFromTag("ThoriumMod:StormFlare");
             if (type > 0)
             {
@@ -1023,6 +1033,16 @@ namespace ResearchFrom14.Common
             }
 
             type = ResearchFrom14.getTypeFromTag("CalamityMod:OverloadedSludge");
+            if (type > 0)
+            {
+                if (totalResearch[type] == 0)
+                {
+                    totalResearch[type] = 3;
+                    AddCategory("Boss Bags and Summons", type);
+                }
+            }
+
+            type = ResearchFrom14.getTypeFromTag("CalamityMod:ProfanedCore");
             if (type > 0)
             {
                 if (totalResearch[type] == 0)

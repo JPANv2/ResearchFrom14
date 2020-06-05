@@ -1,6 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using ResearchFrom14.Common;
+using ResearchFrom14.Configs;
 using Terraria;
 using Terraria.ModLoader;
 
@@ -12,6 +15,8 @@ namespace ResearchFrom14.Items
 
         public List<int> knowledge = null;
         public string playerName = null;
+
+        private Task t;
         public override void SetStaticDefaults()
         {
             DisplayName.SetDefault("Research Sharing Book");
@@ -34,13 +39,47 @@ namespace ResearchFrom14.Items
         {
             if (knowledge == null || playerName == null)
                 return;
-            Main.NewText("Knows " + knowledge.Count + " items.");
-            if (player.name.Equals(playerName))
+            if(t != null && !t.IsCompleted)
+            {
+                Main.NewText("Still running...");
                 return;
+            }
+            Main.NewText("Knows " + knowledge.Count + " items.");
             ResearchPlayer rp = player.GetModPlayer<ResearchPlayer>();
-            rp.AddAllResearchedItems(knowledge);
+            if (player.name.Equals(playerName))
+            {
+                if (ModContent.GetInstance<Config>().researchRecipes)
+                {
+                    t = Task.Run(rebuildResearch);
+                }
+                return;
+            }
+            else
+            {
+                t = Task.Run(addKnowledge);
+            }
+            
 
             item.stack--;
+        }
+
+        private void addKnowledge()
+        {
+            ResearchPlayer rp = Main.player[Main.myPlayer].GetModPlayer<ResearchPlayer>();
+            Main.NewText("Adding new research...");
+            rp.AddAllResearchedItems(knowledge);
+            Main.NewText("Done, now knows " + rp.researchedCache.Count + " items.");
+            playerName = Main.player[Main.myPlayer].name;
+            knowledge = rp.researchedCache;
+        }
+
+        private void rebuildResearch()
+        {
+            ResearchPlayer rp = Main.player[Main.myPlayer].GetModPlayer<ResearchPlayer>();
+            Main.NewText("Rebuilding research from cache. This may take a while...");
+            rp.refreshResearch();
+            Main.NewText("Done, now knows " + rp.researchedCache.Count + " items.");
+            knowledge = rp.researchedCache;
         }
 
         public override ModItem Clone()

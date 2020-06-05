@@ -99,6 +99,47 @@ namespace ResearchFrom14.Common
             return AddResearchedAmount(ResearchFrom14.ItemIDToTag(type), amount);
         }
 
+        public void refreshResearch()
+        {
+            if (ModContent.GetInstance<Config>().researchRecipes)
+            {
+                rebuildingCache = true;
+                List<int> oldResearchCache = new List<int>();
+                oldResearchCache.AddRange(researchedCache);
+                foreach (int type in oldResearchCache)
+                {
+                    Item itm = new Item();
+                    itm.SetDefaults(type);
+                    rebuildingCache = true;
+
+                    if (itm.createTile >= 0)
+                    {
+                        List<int> tiles = AdjTiles(itm.createTile);
+                        foreach (int t in tiles)
+                        {
+                            RecipeFinder rf = new RecipeFinder();
+                            rf.AddTile(t);
+                            List<Recipe> res = rf.SearchRecipes();
+                            // Main.NewText("Found " + res.Count + "recipes with tile.");
+                            foreach (Recipe r in res)
+                            {
+                                validateAndResearchRecipe(r);
+                            }
+                        }
+                    }
+                    RecipeFinder rf2 = new RecipeFinder();
+                    rf2.AddIngredient(itm.type);
+                    List<Recipe> res2 = rf2.SearchRecipes();
+                    // Main.NewText("Found " + res2.Count + "recipes with item.");
+                    foreach (Recipe r in res2)
+                    {
+                        validateAndResearchRecipe(r);
+                    }
+                    rebuildingCache = false;
+                    ((ResearchFrom14)mod).ui.recipes.changedToList = true;
+                }
+            }
+        }
         public void AddAllResearchedItems(List<int> researched)
         {
             foreach(int type in researched)
@@ -137,7 +178,6 @@ namespace ResearchFrom14.Common
                         }
                     }
                     rebuildingCache = false;
-                    ((ResearchFrom14)mod).ui.recipes.invalidatedList = true;
                     ((ResearchFrom14)mod).ui.recipes.changedToList = true;
 
                 }
@@ -192,7 +232,6 @@ namespace ResearchFrom14.Common
                     goto rebuildCacheReset;
             }
             
-            ((ResearchFrom14)mod).ui.recipes.invalidatedList = true;
             ((ResearchFrom14)mod).ui.recipes.changedToList = true;
             rebuildingCache = false;
             mod.Logger.Info("Player " + player.name + "'s Cache knows " + researchedCache.Count + " Items");
@@ -290,7 +329,6 @@ namespace ResearchFrom14.Common
                     Main.PlaySound(SoundID.Item4);
                     rebuildingCache = true;
                     researchedCache.Add(type);
-                    ((ResearchFrom14)mod).ui.recipes.invalidatedList = true;
                     ((ResearchFrom14)mod).ui.recipes.changedToList = true;
                     if (ModContent.GetInstance<Config>().researchRecipes)
                     {
