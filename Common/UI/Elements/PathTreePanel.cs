@@ -8,11 +8,12 @@ using ResearchFrom14.Common.UI;
 using ResearchFrom14.Common.UI.Elements;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
-
+using Terraria.ModLoader;
 using Terraria.UI;
 
 namespace ResearchFrom14.Common.UI.Elements
-{
+{ 
+
     public class PathTreePanel : UIPanel
     {
         public PathTree allTree = PathTree.makePathTree("", "All");
@@ -147,6 +148,73 @@ namespace ResearchFrom14.Common.UI.Elements
                 parent.hasChanged = true;
                 parent.selected = this.tree;
             }
+        }
+    }
+
+    public class PrefixScrollablePanel : UIPanel
+    {
+        public UIGridList internalGrid;
+        public UIScrollbar scrollbar;
+
+        public Item selected = null;
+
+        public bool hasChanged = false;
+        
+        public override void OnActivate()
+        {
+            BackgroundColor = Color.Blue;
+            BackgroundColor.A = 196;
+            BorderColor = Color.White;
+            hasChanged = true;
+            internalGrid = new UIGridList();
+            internalGrid.OnScrollWheel += ResearchUI.onScrollWheelForUIText;
+
+            //scrollbar = new UIScrollbar();
+            scrollbar = new InvisibleScrollbar();
+            Append(internalGrid);
+            scrollbar.SetView(300f, 1000f);
+            scrollbar.Height.Set(0, 1f);
+            scrollbar.Width.Set(1, 0);
+            scrollbar.Left.Set(-14, 1f);
+            Append(scrollbar);
+            internalGrid.SetScrollbar(scrollbar);
+        }
+
+        public override void Update(GameTime gameTime)
+        {
+            if (selected != ((ResearchFrom14)ModLoader.GetMod("ResearchFrom14")).preUI.itemSlot.item || hasChanged)
+               buildList();
+            Recalculate();
+            base.Update(gameTime);
+        }
+
+        private void buildList()
+        {
+            internalGrid.Clear();
+            internalGrid.Left.Set(2, 0);
+            internalGrid.Top.Set(2, 0);
+            internalGrid.Width.Set(0, 1.0f);
+            internalGrid.Height.Set(0, 1.0f);
+
+            float startX = 2;
+            float startY = 2;
+            selected = ((ResearchFrom14)ModLoader.GetMod("ResearchFrom14")).preUI.itemSlot.item;
+            if(selected == null || selected.type == 0)
+            {
+                Recalculate();
+                internalGrid.RecalculateChildren();
+                hasChanged = false;
+                return;
+            }
+            ResearchPlayer pl = Main.player[Main.myPlayer].GetModPlayer<ResearchPlayer>();
+            internalGrid.Add(new PrefixButton(0));
+            foreach (byte b in pl.GetResearchedPrefixes(selected))
+            {
+                internalGrid.Add(new PrefixButton(b));
+            }
+            Recalculate();
+            internalGrid.RecalculateChildren();
+            hasChanged = false;
         }
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using Microsoft.Xna.Framework;
 using ResearchFrom14.Common;
 using ResearchFrom14.Common.UI;
@@ -8,6 +9,7 @@ using ResearchFrom14.Configs;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
+using Terraria.ModLoader.Config;
 using Terraria.ModLoader.IO;
 using Terraria.UI;
 
@@ -18,9 +20,12 @@ namespace ResearchFrom14
 
         public Config mainConfig = ModContent.GetInstance<Config>();
         public static ModHotKey hotkey;
+        public static ModHotKey preHotkey;
         public UserInterface purchaseUI;
-
+        public UserInterface prefixUI;
         public ResearchUI ui;
+        public PrefixUI preUI;
+
 
         public ResearchFrom14()
         {
@@ -38,6 +43,12 @@ namespace ResearchFrom14
                 ui.Activate();
                 purchaseUI.SetState(ui);
                 hotkey = RegisterHotKey("Open or Close ResearchUI", "Add");
+                prefixUI = new UserInterface();
+                preUI = new PrefixUI();
+                preUI.Activate();
+                prefixUI.SetState(preUI);
+                preHotkey = RegisterHotKey("Open or Close Prefix Assignment", "Subtract");
+                    
             }
         }
 
@@ -56,6 +67,13 @@ namespace ResearchFrom14
                     purchaseUI.Update(gameTime);
                 }
             }
+            if (prefixUI?.CurrentState != null)
+            {
+                if (PrefixUI.visible)
+                {
+                    prefixUI.Update(gameTime);
+                }
+            }
         }
 
 
@@ -63,10 +81,48 @@ namespace ResearchFrom14
         {
             if (player == Main.myPlayer && Main.netMode != NetmodeID.Server)
             {
+                
                 ui?.setVisible(true);
                 Main.playerInventory = true;
                 Main.recBigList = false;
+                if (ModContent.GetInstance<ExceptionListConfig>().forceReload)
+                {
+                    ResearchTable.InitResearchTable();
+                    if (Main.netMode == NetmodeID.MultiplayerClient)
+                    {
+                        ModPacket pk = this.GetPacket();
+                        pk.Write((byte)99);
+                        pk.Write((byte)Main.myPlayer);
+                        pk.Send(-1, -1);
+                        Main.player[Main.myPlayer].GetModPlayer<ResearchPlayer>().RebuildCache();
+                        ModContent.GetInstance<ExceptionListConfig>().forceReload = false;
+                    }
+                    else
+                    {
+                        ModContent.GetInstance<ExceptionListConfig>().forceReload = false;
+                        SaveListConfig();
+                    }
+                    
+                }
             }
+        }
+
+        public void ActivatePrefixUI(int player)
+        {
+            if (player == Main.myPlayer && Main.netMode != NetmodeID.Server)
+            {
+
+                preUI?.setVisible(true);
+                Main.playerInventory = true;
+                Main.recBigList = false;
+            }
+        }
+
+        public static void SaveListConfig()
+        {
+            Type typeOfManager = typeof(ConfigManager);
+            MethodInfo info = typeOfManager.GetMethod("Save", BindingFlags.NonPublic | BindingFlags.Static);
+            info.Invoke(null, new object[] { ModContent.GetInstance<ExceptionListConfig>() });
         }
 
         public override void ModifyInterfaceLayers(List<GameInterfaceLayer> layers)
@@ -84,6 +140,21 @@ namespace ResearchFrom14
                         if (ResearchUI.visible)
                         {
                             ui.Draw(Main.spriteBatch);
+                        }
+                        return true;
+                    },
+                       InterfaceScaleType.UI));
+
+                layers.Insert(index, new LegacyGameInterfaceLayer(
+                    "ResearchFrom14: PrefixUI",
+                    delegate
+                    {
+                        if (!Main.playerInventory)
+                            PrefixUI.visible = false;
+
+                        if (PrefixUI.visible)
+                        {
+                            preUI.Draw(Main.spriteBatch);
                         }
                         return true;
                     },
@@ -152,7 +223,7 @@ namespace ResearchFrom14
                 if (Main.netMode == NetmodeID.Server || player != Main.myPlayer)
                 {
                     TagCompound tempResearch = TagIO.Read(reader);
-                    foreach(KeyValuePair<string, object> read in tempResearch)
+                    foreach (KeyValuePair<string, object> read in tempResearch)
                     {
                         Main.player[player].GetModPlayer<ResearchPlayer>().research[read.Key] = tempResearch.GetAsInt(read.Key);
                     }
@@ -161,14 +232,32 @@ namespace ResearchFrom14
                     return;
                 }
             }
-            if(messageID == 1)
+            if (messageID == 1)
             {
                 int player = reader.ReadByte();
                 Main.player[player].GetModPlayer<ResearchPlayer>().dirtyCache = true;
                 Main.player[player].GetModPlayer<ResearchPlayer>().RebuildCache();
                 return;
             }
-
+            if (messageID == 99)
+            {
+                int player = reader.ReadByte();
+                ResearchTable.InitResearchTable();
+                if (Main.netMode == NetmodeID.Server)
+                {
+                    ModPacket pk = this.GetPacket();
+                    pk.Write((byte)99);
+                    pk.Write((byte)player);
+                    pk.Send(-1, player);
+                    ModContent.GetInstance<ExceptionListConfig>().forceReload = false;
+                    SaveListConfig();
+                }
+                else
+                {
+                    Main.player[Main.myPlayer].GetModPlayer<ResearchPlayer>().RebuildCache();
+                }
+                ModContent.GetInstance<ExceptionListConfig>().forceReload = false;
+            }
         }
 
         internal static bool PlaceInInventory(Player player, Item item)

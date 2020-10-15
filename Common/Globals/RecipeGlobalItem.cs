@@ -27,7 +27,7 @@ namespace ResearchFrom14.Common.Globals
         public override bool ConsumeAmmo(Item item, Player player)
         {
             ResearchPlayer rp = player.GetModPlayer<ResearchPlayer>();
-            if(item.ammo > 0 && rp.IsResearched(item))
+            if(item.ammo > 0 && ModContent.GetInstance<Config>().infiniteAmmo &&rp.IsResearched(item))
             {
                 return false;
             }
@@ -62,7 +62,14 @@ namespace ResearchFrom14.Common.Globals
                     }
                     else
                     {
-                        tooltips.Add(new TooltipLine(this.mod, "Research", "Research " + (ResearchTable.GetTotalResearch(item) - rp.GetResearchedAmount(item)) + " more to unlock.") { overrideColor = Color.Lerp(Color.HotPink, Color.White, 0.1f) });
+                        if (!rp.IsResearched(item.type)){
+                            tooltips.Add(new TooltipLine(this.mod, "Research", "Research " + (ResearchTable.GetTotalResearch(item) - rp.GetResearchedAmount(item)) + " more to unlock.") { overrideColor = Color.Lerp(Color.HotPink, Color.White, 0.1f) });
+                        }
+                        else
+                        {
+                            tooltips.Add(new TooltipLine(this.mod, "Research", "Base item Researched, but not this Prefix for this item.") { overrideColor = Color.Lerp(Color.HotPink, Color.White, 0.1f) });
+                        }
+                        
                     }
                 }
             }

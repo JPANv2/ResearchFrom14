@@ -32,6 +32,8 @@ namespace ResearchFrom14.Items
             ResearchPlayer rp = player.GetModPlayer<ResearchPlayer>();
             rp.research = new TagCompound();
             rp.researchedCache.Clear();
+            rp.researchedTileCache.Clear();
+            rp.researchedTileAdj = new bool[TileLoader.TileCount];
             rp.AddAllResearchedItems(new List<int>() { ModContent.ItemType<ResearchErasingBook>(), ModContent.ItemType<ResearchSharingBook>() });
 
             item.stack--;

@@ -84,4 +84,57 @@ namespace ResearchFrom14.Common.UI.Elements
 
         }
     }
+    public class PrefixButton : UIPanel
+    {
+
+        private UIText buttonText;
+
+        private String prefixName = "None";
+
+        private byte prefix = 0;
+
+        public PrefixButton(byte prefix)
+        {
+            this.prefix = prefix;
+            if (prefix != 0 && prefix < Lang.prefix.Length && Lang.prefix[prefix] != null)
+            {
+                prefixName = Lang.prefix[prefix].Value;
+            }
+            else
+            {
+                prefixName = "None";
+            }
+            this.Width.Set(0, 1f);
+            this.Height.Set(30, 0);
+            buttonText = new UIText(prefixName, 0.75f);
+            buttonText.HAlign = buttonText.VAlign = 0.5f;
+            buttonText.TextColor = Color.White;
+            this.BackgroundColor = Color.CornflowerBlue;
+            this.Append(buttonText);
+        }
+
+        public override void OnInitialize()
+        {
+            buttonText = new UIText(prefixName, 0.75f);
+            buttonText.HAlign = buttonText.VAlign = 0.5f;
+            buttonText.TextColor = Color.White;
+            this.BackgroundColor = Color.CornflowerBlue;
+            this.Append(buttonText);
+            base.OnInitialize();
+        }
+
+        public override void Click(UIMouseEvent evt)
+        {
+            Main.player[Main.myPlayer].GetModPlayer<ResearchPlayer>().Research();
+            Item toWork = ((ResearchFrom14)ModLoader.GetMod("ResearchFrom14")).preUI.itemSlot.item;
+            if (toWork.prefix != 0)
+            {
+                toWork.prefix = 0;
+                toWork.SetDefaults(toWork.type);
+            }
+            toWork.Prefix(prefix);
+            ((ResearchFrom14)ModLoader.GetMod("ResearchFrom14")).preUI.itemSlot.item = toWork;
+            ((ResearchFrom14)ModLoader.GetMod("ResearchFrom14")).preUI.itemSlot.realItem = toWork;
+        }
+    }
 }

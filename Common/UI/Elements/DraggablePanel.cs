@@ -96,13 +96,20 @@ namespace ResearchFrom14.Common.UI.Elements
                     }
                 }
                 Recalculate();
-                ((ResearchFrom14)ModLoader.GetMod("ResearchFrom14")).ActivatePurchaseUI(Main.myPlayer);
-            }else if (dragging)
+                if(ResearchUI.visible)
+                    ((ResearchFrom14)ModLoader.GetMod("ResearchFrom14")).ActivatePurchaseUI(Main.myPlayer);
+                else if (PrefixUI.visible)
+                    ((ResearchFrom14)ModLoader.GetMod("ResearchFrom14")).ActivatePrefixUI(Main.myPlayer);
+            }
+            else if (dragging)
             {
                 Left.Set(Main.mouseX - offset.X, 0f);
                 Top.Set(Main.mouseY - offset.Y, 0f);
                 Recalculate();
-                ((ResearchFrom14)ModLoader.GetMod("ResearchFrom14")).ActivatePurchaseUI(Main.myPlayer);
+                if (ResearchUI.visible)
+                    ((ResearchFrom14)ModLoader.GetMod("ResearchFrom14")).ActivatePurchaseUI(Main.myPlayer);
+                else if (PrefixUI.visible)
+                    ((ResearchFrom14)ModLoader.GetMod("ResearchFrom14")).ActivatePrefixUI(Main.myPlayer);
             }
 
             var parentSpace = Parent.GetDimensions().ToRectangle();

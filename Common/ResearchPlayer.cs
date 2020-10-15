@@ -38,6 +38,10 @@ namespace ResearchFrom14.Common
             int res = ResearchTable.GetTotalResearch(item);
             if (res < 1)
                 return false;
+            if(item.prefix > 0)
+            {
+                return IsResearchedPrefix(item) && (GetResearchedAmount(item) >= res);
+            }
             return GetResearchedAmount(item) >= res;
         }
 
@@ -47,6 +51,47 @@ namespace ResearchFrom14.Common
             if (res < 1)
                 return false;
             return GetResearchedAmount(itemType) >= res;
+        }
+
+        public bool IsResearchedPrefix(Item item)
+        {
+            if (research.ContainsKey(ResearchFrom14.ItemToTag(item) + ":p"))
+            {
+                byte[] ba = research.GetByteArray(ResearchFrom14.ItemToTag(item) + ":p");
+                foreach (byte b in ba) { 
+                    if (b == item.prefix)
+                        return true;
+                }
+            }
+            return item.prefix == 0;
+        }
+
+        public void AddResearchPrefix(Item item)
+        {
+            if (item.prefix == 0)
+                return;
+            List<byte> prefixes = new List<byte>();
+            String iTag = ResearchFrom14.ItemToTag(item) + ":p";
+            if (research.ContainsKey(iTag))
+            {
+                prefixes.AddRange(research.GetByteArray(iTag));
+            }
+            prefixes.Add(item.prefix);
+            prefixes.Sort();
+            research[iTag] = prefixes.ToArray();
+            return;
+        }
+
+        public byte[] GetResearchedPrefixes(Item item)
+        {
+            return GetResearchedPrefixes(ResearchFrom14.ItemToTag(item));
+        }
+
+        public byte[] GetResearchedPrefixes(String itemTag)
+        {
+            if (research.ContainsKey(itemTag + ":p"))
+                return research.GetByteArray(itemTag + ":p");
+            return new byte[0];
         }
 
         public int GetResearchedAmount(String itemTag)
@@ -91,7 +136,8 @@ namespace ResearchFrom14.Common
 
         public int AddResearchedAmount(Item realItem)
         {
-            return AddResearchedAmount(ResearchFrom14.ItemToTag(realItem), realItem.stack);
+            int retval = AddResearchedAmount(ResearchFrom14.ItemToTag(realItem), realItem.stack);
+            return retval;
         }
 
         public int AddResearchedAmount(int type, int amount)
@@ -308,58 +354,72 @@ namespace ResearchFrom14.Common
                 return;
             int type = destroyingItem.type;
             int stack = destroyingItem.stack;
-            destroyingItem.stack = AddResearchedAmount(destroyingItem);
-            if (destroyingItem.stack != stack)
+            if (!IsResearched(destroyingItem))
             {
-                if (destroyingItem.stack <= 0)
+                bool needsCacheRebuilt = true;
+                destroyingItem.stack = AddResearchedAmount(destroyingItem);
+                AddResearchPrefix(destroyingItem);
+                
+                if (destroyingItem.stack == stack)
                 {
-                    destroyingItem.TurnToAir();
+                    destroyingItem.stack--;
+                    needsCacheRebuilt = false;
                 }
-                else if(ResearchFrom14.PlaceInInventory(player, destroyingItem))
+                if (destroyingItem.stack != stack)
                 {
-                    destroyingItem = new Item();
-                }
-
-                if (GetResearchedAmount(type) < ResearchTable.GetTotalResearch(type))
-                {
-                    Main.PlaySound(SoundID.Grab);
-                }
-                else
-                {
-                    Main.PlaySound(SoundID.Item4);
-                    rebuildingCache = true;
-                    researchedCache.Add(type);
-                    ((ResearchFrom14)mod).ui.recipes.changedToList = true;
-                    if (ModContent.GetInstance<Config>().researchRecipes)
+                    if (destroyingItem.stack <= 0)
                     {
-                        Item itm = new Item();
-                        itm.SetDefaults(type);
-                        
-                        if(itm.createTile >= 0)
+                        destroyingItem.TurnToAir();
+                    }
+                    else if (ResearchFrom14.PlaceInInventory(player, destroyingItem))
+                    {
+                        destroyingItem = new Item();
+                    }
+
+                    if (GetResearchedAmount(type) < ResearchTable.GetTotalResearch(type))
+                    {
+                        Main.PlaySound(SoundID.Grab);
+                    }
+                    else
+                    {
+                        Main.PlaySound(SoundID.Item4);
+                        if (needsCacheRebuilt)
                         {
-                            List<int> tiles = AdjTiles(itm.createTile);
-                            foreach (int t in tiles)
+                            rebuildingCache = true;
+                            researchedCache.Add(type);
+                            ((ResearchFrom14)mod).ui.recipes.changedToList = true;
+                            if (ModContent.GetInstance<Config>().researchRecipes)
                             {
-                                RecipeFinder rf = new RecipeFinder();
-                                rf.AddTile(t);
-                                List<Recipe> res = rf.SearchRecipes();
-                                // Main.NewText("Found " + res.Count + "recipes with tile.");
-                                foreach (Recipe r in res)
+                                Item itm = new Item();
+                                itm.SetDefaults(type);
+
+                                if (itm.createTile >= 0)
+                                {
+                                    List<int> tiles = AdjTiles(itm.createTile);
+                                    foreach (int t in tiles)
+                                    {
+                                        RecipeFinder rf = new RecipeFinder();
+                                        rf.AddTile(t);
+                                        List<Recipe> res = rf.SearchRecipes();
+                                        // Main.NewText("Found " + res.Count + "recipes with tile.");
+                                        foreach (Recipe r in res)
+                                        {
+                                            validateAndResearchRecipe(r);
+                                        }
+                                    }
+                                }
+                                RecipeFinder rf2 = new RecipeFinder();
+                                rf2.AddIngredient(itm.type);
+                                List<Recipe> res2 = rf2.SearchRecipes();
+                                // Main.NewText("Found " + res2.Count + "recipes with item.");
+                                foreach (Recipe r in res2)
                                 {
                                     validateAndResearchRecipe(r);
                                 }
                             }
-                        }
-                        RecipeFinder rf2 = new RecipeFinder();
-                        rf2.AddIngredient(itm.type);
-                        List<Recipe> res2 = rf2.SearchRecipes();
-                       // Main.NewText("Found " + res2.Count + "recipes with item.");
-                        foreach (Recipe r in res2)
-                        {
-                            validateAndResearchRecipe(r);
+                            rebuildingCache = false;
                         }
                     }
-                    rebuildingCache = false;
                 }
             }
         }
@@ -511,6 +571,38 @@ namespace ResearchFrom14.Common
                 if (ModContent.GetInstance<Config>().autoShiftResearch)
                     Research();
                 return true;
+            }else if (PrefixUI.visible && inventory != null && inventory[slot] != null && !inventory[slot].IsAir)
+            {
+                Item working = ((ResearchFrom14)ModLoader.GetMod("ResearchFrom14")).preUI.itemSlot.item;
+                if (working == null || working.IsAir)
+                {
+                    ((ResearchFrom14)ModLoader.GetMod("ResearchFrom14")).preUI.itemSlot.item = inventory[slot];
+                    ((ResearchFrom14)ModLoader.GetMod("ResearchFrom14")).preUI.itemSlot.realItem = inventory[slot];
+                    inventory[slot] = new Item();
+                }
+                else if (working.type == inventory[slot].type && working.stack < working.maxStack)
+                {
+                    int total = working.stack + inventory[slot].stack;
+                    if (total <= working.maxStack)
+                    {
+                        working.stack = total;
+                        inventory[slot] = new Item();
+                    }
+                    else
+                    {
+                        total = inventory[slot].stack - (working.maxStack - working.stack);
+                        inventory[slot].stack = total;
+                        working.stack = working.maxStack;
+                    }
+                }
+                else
+                {
+                    Item temp = inventory[slot];
+                    inventory[slot] = working;
+                    ((ResearchFrom14)ModLoader.GetMod("ResearchFrom14")).preUI.itemSlot.item = temp;
+                    ((ResearchFrom14)ModLoader.GetMod("ResearchFrom14")).preUI.itemSlot.realItem = temp;
+                }
+                return true;
             }
             return false;
 
@@ -526,6 +618,7 @@ namespace ResearchFrom14.Common
             if (destroyingItem == null)
                 destroyingItem = new Item();
             research["0.research"] = ItemIO.Save(destroyingItem);
+            research["0.prefix"] = ItemIO.Save(((ResearchFrom14)ModLoader.GetMod("ResearchFrom14")).preUI.itemSlot.item);
             return research;
 
         }
@@ -540,6 +633,13 @@ namespace ResearchFrom14.Common
                 destroyingItem = ItemIO.Load(research.GetCompound("0.research"));
                 research.Remove("0.research");
             }
+            if (research.ContainsKey("0.prefix"))
+            {
+                ((ResearchFrom14)ModLoader.GetMod("ResearchFrom14")).preUI.itemSlot.item = ItemIO.Load(research.GetCompound("0.prefix"));
+                ((ResearchFrom14)ModLoader.GetMod("ResearchFrom14")).preUI.itemSlot.realItem = ((ResearchFrom14)ModLoader.GetMod("ResearchFrom14")).preUI.itemSlot.item;
+                research.Remove("0.prefix");
+            }
+
             if (!research.ContainsKey(ResearchFrom14.ItemIDToTag(ModContent.ItemType<ResearchSharingBook>())) || 
                 !research.ContainsKey(ResearchFrom14.ItemIDToTag(ModContent.ItemType<ResearchErasingBook>())))
             {
@@ -547,6 +647,8 @@ namespace ResearchFrom14.Common
                 research[ResearchFrom14.ItemIDToTag(ModContent.ItemType<ResearchErasingBook>())] = Int32.MaxValue - 1000;
             }
             researchedCache = new List<int>();
+            researchedTileCache = new List<int>();
+            researchedTileAdj = new bool[TileLoader.TileCount];
             mod.Logger.Info("Player " + player.name + " knows " + research.Count + " Items"); 
             populateCache = Task.Run(actualRebuildCache);
         }
@@ -598,6 +700,16 @@ namespace ResearchFrom14.Common
                 }
                 else
                     (mod as ResearchFrom14).ui.setVisible(false);
+            }
+            if (ResearchFrom14.preHotkey.JustPressed && (Main.playerInventory || ModContent.GetInstance<Config>().buttonAlwaysOn))
+            {
+                if (!PrefixUI.visible)
+                {
+                    Main.playerInventory = true;
+                    (mod as ResearchFrom14).ActivatePrefixUI(player.whoAmI);
+                }
+                else
+                    (mod as ResearchFrom14).preUI.setVisible(false);
             }
         }
     }

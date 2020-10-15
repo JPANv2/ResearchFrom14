@@ -192,6 +192,7 @@ namespace ResearchFrom14.Common.UI
             if (IsMouseHovering)
             {
                 ResearchUI.visible = false;
+                PrefixUI.visible = false;
             }
         }
     }

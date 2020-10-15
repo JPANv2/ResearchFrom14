@@ -147,6 +147,54 @@ namespace ResearchFrom14.Common.UI.Elements
             }
         }
 
+        public override void Click(UIMouseEvent evt)
+        {
+            if (IsMouseHovering)
+            {
+                if (ItemSlot.ShiftInUse && item != null && !item.IsAir)
+                {
+                    if (ResearchFrom14.PlaceInInventory(Main.player[Main.myPlayer], item))
+                    {
+                        realItem = new Item();
+                    }
+                }
+                else if ((Main.mouseItem == null || Main.mouseItem.IsAir) && item != null)
+                {
+                    Main.mouseItem = item;
+                    realItem = new Item();
+                }
+                else if (Main.mouseItem != null)
+                {
+                    if (item == null || item.IsAir)
+                    {
+                        realItem = Main.mouseItem;
+                        Main.mouseItem = item;
+                    }
+                    else if (item.type == Main.mouseItem.type)
+                    {
+                        if (item.stack + Main.mouseItem.stack <= item.maxStack)
+                        {
+                            item.stack += Main.mouseItem.stack;
+                            Main.mouseItem.TurnToAir();
+                        }
+                        else
+                        {
+                            Main.mouseItem.stack -= (item.maxStack - item.stack);
+                            item.stack = item.maxStack;
+                        }
+                    }
+                    else
+                    {
+                        Item tmp = Main.mouseItem;
+                        Main.mouseItem = realItem;
+                        realItem = tmp;
+                        item = tmp;
+                    }
+                }
+            }
+            item = realItem;
+        }
+
         public virtual void whileMouseHovering()
         {
            
@@ -335,6 +383,11 @@ namespace ResearchFrom14.Common.UI.Elements
                     }
                 }
             }
+
+        public override void Click(UIMouseEvent evt)
+        {
+            
+        }
 
         public override int CompareTo(object obj)
         {
