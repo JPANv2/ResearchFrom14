@@ -41,6 +41,11 @@ namespace ResearchFrom14.Configs
         [DefaultValue(false)]
         public bool autoTrashResearched;
 
+        [Label("Auto-Trash research prefixes")]
+        [Tooltip("If auto-trash is on, and you pick up a weapon that has a new prefix, it auto-researches that prefix and deletes the weapon.")]
+        [DefaultValue(false)]
+        public bool autoTrashResearchPrefix;
+
         [Label("Craft from Researched stations")]
         [Tooltip("If true, will allow use of the researched crafting stations as if they were around the player.")]
         [DefaultValue(false)]

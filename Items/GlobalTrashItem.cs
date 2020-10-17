@@ -42,11 +42,22 @@ namespace ResearchFrom14.Items
         public override bool CanPickup(Item item, Player player)
         {
             ResearchPlayer rp = player.GetModPlayer<ResearchPlayer>();
-            if (ModContent.GetInstance<Config>().autoTrashResearched && rp.IsResearched(item))
-            {
-                item.stack = 0;
-                item.TurnToAir();
-                return true;
+            if (ModContent.GetInstance<Config>().autoTrashResearched) {
+                if (rp.IsResearched(item))
+                {
+                    item.stack = 0;
+                    //item.TurnToAir();
+                    return true;
+                }else if (ModContent.GetInstance<Config>().autoTrashResearchPrefix && rp.IsResearched(item.type))
+                {
+                    Item curDestroy = rp.destroyingItem;
+                    Item clone = item.DeepClone();
+                    rp.destroyingItem = clone;
+                    rp.Research();
+                    item.stack = 0;
+                    rp.destroyingItem = curDestroy;
+                    return true;
+                }
             }
             return base.CanPickup(item, player);
         }
