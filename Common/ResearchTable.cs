@@ -41,7 +41,7 @@ namespace ResearchFrom14.Common
                 int type = ResearchFrom14.getTypeFromTag(tag);
                 if (type > 0)
                 {
-                    totalResearch[type] = ModContent.GetInstance<ExceptionListConfig>().customItemValues[tag].value;
+                    totalResearch[type] = ModContent.GetInstance<ExceptionListConfig>().customItemValues[tag].value == 0? -1: ModContent.GetInstance<ExceptionListConfig>().customItemValues[tag].value;
                     foreach (String s in ModContent.GetInstance<ExceptionListConfig>().customItemValues[tag].categories)
                     {
                         AddCategory(s, type);

@@ -1,5 +1,5 @@
 author = JPAN
-version = 1.8.1.1
+version = 1.8.1.2
 displayName = Research System from Terraria 1.4
 hideCode = false
 hideResources = false

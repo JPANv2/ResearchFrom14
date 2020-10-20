@@ -17,13 +17,13 @@ namespace ResearchFrom14.Configs
         public bool forceReload;
 
         [Label("Custom item values")]
-        [Tooltip("Custom research values for items are entered here.\nWrite the ItemID (for Vanilla Terraria items only) or the ItemTag string.\nSet a item to a negative value to prevent it from being researchable.")]
+        [Tooltip("Custom research values for items are entered here.\nWrite the ItemID (for Vanilla Terraria items only) or the ItemTag string.\nSet a item value to zero to prevent it from being researchable.")]
         public Dictionary<string, ExceptionListEntry> customItemValues = new Dictionary<string, ExceptionListEntry>();
     }
 
     public class ExceptionListEntry
     {
-        public int value = 0;
+        public int value = -1;
         public List<string> categories = new List<string>();
     }
 }
