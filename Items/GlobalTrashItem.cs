@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using ResearchFrom14.Common;
 using ResearchFrom14.Configs;
 using Terraria;
+using Terraria.ID;
 using Terraria.ModLoader;
 
 namespace ResearchFrom14.Items
@@ -32,7 +33,7 @@ namespace ResearchFrom14.Items
         public override bool ItemSpace(Item item, Player player)
         {
             ResearchPlayer rp = player.GetModPlayer<ResearchPlayer>();
-            if (ModContent.GetInstance<Config>().autoTrashResearched && rp.IsResearched(item))
+            if (ModContent.GetInstance<Config>().autoTrashResearched && Main.netMode != NetmodeID.Server && rp.IsResearched(item))
             {
                 return true;
             }
@@ -42,7 +43,7 @@ namespace ResearchFrom14.Items
         public override bool CanPickup(Item item, Player player)
         {
             ResearchPlayer rp = player.GetModPlayer<ResearchPlayer>();
-            if (ModContent.GetInstance<Config>().autoTrashResearched) {
+            if (ModContent.GetInstance<Config>().autoTrashResearched && Main.netMode != NetmodeID.Server && !isItemNotTrasheable(item)) {
                 if (rp.IsResearched(item))
                 {
                     item.stack = 0;
@@ -60,6 +61,11 @@ namespace ResearchFrom14.Items
                 }
             }
             return base.CanPickup(item, player);
+        }
+
+        public virtual bool isItemNotTrasheable(Item item)
+        {
+            return item.type == ModContent.ItemType<ResearchSharingBook>();
         }
     }
 }
