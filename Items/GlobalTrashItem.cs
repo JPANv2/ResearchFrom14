@@ -33,7 +33,7 @@ namespace ResearchFrom14.Items
         public override bool ItemSpace(Item item, Player player)
         {
             ResearchPlayer rp = player.GetModPlayer<ResearchPlayer>();
-            if (ModContent.GetInstance<Config>().autoTrashResearched && Main.netMode != NetmodeID.Server && rp.IsResearched(item))
+            if (ModContent.GetInstance<TrashConfig>().autoTrashResearched && Main.netMode != NetmodeID.Server && rp.IsResearched(item))
             {
                 return true;
             }
@@ -43,13 +43,13 @@ namespace ResearchFrom14.Items
         public override bool CanPickup(Item item, Player player)
         {
             ResearchPlayer rp = player.GetModPlayer<ResearchPlayer>();
-            if (ModContent.GetInstance<Config>().autoTrashResearched && Main.netMode != NetmodeID.Server && !isItemNotTrasheable(item)) {
+            if (ModContent.GetInstance<TrashConfig>().autoTrashResearched && Main.netMode != NetmodeID.Server && !isItemNotTrasheable(item)) {
                 if (rp.IsResearched(item))
                 {
                     item.stack = 0;
                     //item.TurnToAir();
                     return true;
-                }else if (ModContent.GetInstance<Config>().autoTrashResearchPrefix && rp.IsResearched(item.type))
+                }else if (ModContent.GetInstance<TrashConfig>().autoTrashResearchPrefix && rp.IsResearched(item.type))
                 {
                     Item curDestroy = rp.destroyingItem;
                     Item clone = item.DeepClone();
@@ -65,7 +65,19 @@ namespace ResearchFrom14.Items
 
         public virtual bool isItemNotTrasheable(Item item)
         {
-            return item.type == ModContent.ItemType<ResearchSharingBook>();
+            if (item.type == ModContent.ItemType<ResearchSharingBook>())
+                return true;
+            if (item.type >= ItemID.CopperCoin && item.type <= ItemID.PlatinumCoin)
+                return true;
+            if(item.type == ItemID.DD2EnergyCrystal) //etherian mana
+                return true;
+
+            foreach(string k in ModContent.GetInstance<TrashConfig>().exceptionList)
+            {
+                if (item.type == ResearchFrom14.getTypeFromTag(k))
+                    return true;
+            }
+            return false;
         }
     }
 }

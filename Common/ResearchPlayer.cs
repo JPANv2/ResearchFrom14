@@ -541,7 +541,8 @@ namespace ResearchFrom14.Common
 
         public override bool ShiftClickSlot(Item[] inventory, int context, int slot)
         {
-            if (ResearchUI.visible && inventory != null && inventory[slot] != null && !inventory[slot].IsAir)
+            if (ResearchUI.visible && inventory != null && inventory[slot] != null && !inventory[slot].IsAir && 
+                context != Terraria.UI.ItemSlot.Context.ShopItem && context != Terraria.UI.ItemSlot.Context.ChatItem)
             {
                 if(destroyingItem == null || destroyingItem.IsAir)
                 {
@@ -568,7 +569,7 @@ namespace ResearchFrom14.Common
                     inventory[slot] = destroyingItem;
                     destroyingItem = temp;
                 }
-                if (ModContent.GetInstance<Config>().autoShiftResearch)
+                if (ModContent.GetInstance<Config>().autoShiftResearch && IsResearchable(destroyingItem))
                     Research();
                 return true;
             }else if (PrefixUI.visible && inventory != null && inventory[slot] != null && !inventory[slot].IsAir)
@@ -606,6 +607,11 @@ namespace ResearchFrom14.Common
             }
             return false;
 
+        }
+
+        public bool IsResearchable(Item destroyingItem)
+        {
+            return ResearchTable.GetTotalResearch(destroyingItem) > 0;
         }
 
         #region save_load_update

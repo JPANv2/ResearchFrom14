@@ -36,16 +36,6 @@ namespace ResearchFrom14.Configs
         [DefaultValue(false)]
         public bool autoShiftResearch;
 
-        [Label("Auto-Trash picked up Researched items")]
-        [Tooltip("Automatically deletes items that are researched when picked up. Pick up priority is Mod Name Based, so they may be caught up by other mods. Researched items with prefixes you have not researched yet will not be destroyed.")]
-        [DefaultValue(false)]
-        public bool autoTrashResearched;
-
-        [Label("Auto-Trash research prefixes")]
-        [Tooltip("If auto-trash is on, and you pick up a weapon that has a new prefix, it auto-researches that prefix and deletes the weapon.")]
-        [DefaultValue(false)]
-        public bool autoTrashResearchPrefix;
-
         [Label("Craft from Researched stations")]
         [Tooltip("If true, will allow use of the researched crafting stations as if they were around the player.")]
         [DefaultValue(false)]
