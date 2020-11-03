@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -78,6 +79,20 @@ namespace ResearchFrom14.Items
                     return true;
             }
             return false;
+        }
+
+        public override bool PreDrawTooltip(Item item, ReadOnlyCollection<TooltipLine> lines, ref int x, ref int y)
+        {
+            if (((ResearchFrom14)mod).ui.recipes.tooltipSearch && ((ResearchFrom14)mod).ui.recipes.isSearching)
+            {
+                ((ResearchFrom14)mod).ui.recipes.mouseTooltip = "";
+                foreach (TooltipLine line in lines)
+                {
+                    ((ResearchFrom14)mod).ui.recipes.mouseTooltip += line.text + "\n";
+                }
+                return false;
+            }
+            return base.PreDrawTooltip(item, lines, ref x, ref y);
         }
     }
 }

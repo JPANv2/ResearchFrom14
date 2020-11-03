@@ -27,8 +27,10 @@ namespace ResearchFrom14.Common.UI
         public bool hasChanges = false;
         UIText loading = new UIText("Loading...");
         Task t = null;
-        string search = "";
-        bool tooltipSearch = false;
+        public string search = "";
+        public bool tooltipSearch = false;
+        public bool isSearching = false;
+        public string mouseTooltip = "";
 
         public bool changedToList = false;
         public RecipePanel(ResearchUI panel)
@@ -146,7 +148,7 @@ namespace ResearchFrom14.Common.UI
                 Item itm = new Item();
                 itm.SetDefaults(type);
                 itm.stack = 1;
-                if (parent.search.GetText() == null || parent.search.GetText().Length == 0 || itm.Name.ToLower().Contains(parent.search.GetText().ToLower()) ||
+                if (parent.search.GetText() == null || parent.search.GetText().Trim().Length == 0 || itm.Name.ToLower().Contains(parent.search.GetText().ToLower()) ||
                     (tooltipSearch && condensedTooltip(itm).ToLower().Contains(parent.search.GetText().ToLower())))
                 {
                     toDisplay.Add(itm);
@@ -189,14 +191,14 @@ namespace ResearchFrom14.Common.UI
 
         private string condensedTooltip(Item item)
         {
-            String s = "";
-            item.RebuildTooltip();
-            for(int i = 0; i< item.ToolTip.Lines; i++)
-            {
-                s += item.ToolTip.GetLine(i);
-                s += "\n";
-            }
-            return s;
+            mouseTooltip = "";
+            isSearching = true;
+            Item mouse = Main.HoverItem;
+            Main.HoverItem = item;
+            Main.instance.MouseText("");
+            Main.HoverItem = mouse;
+            isSearching = false;
+            return mouseTooltip;
         }
     }
     public class ItemNameComparer : IComparer<Item>

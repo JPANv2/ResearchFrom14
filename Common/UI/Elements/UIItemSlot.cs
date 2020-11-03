@@ -317,7 +317,11 @@ namespace ResearchFrom14.Common.UI.Elements
             {
                 if (ItemSlot.ShiftInUse && item.type != ModContent.ItemType<ResearchSharingBook>())
                 {
-                    Main.player[Main.myPlayer].QuickSpawnItem(item.type, item.maxStack);
+                    Item itm = item.DeepClone();
+                    itm.stack = item.maxStack;
+                    itm = Main.player[Main.myPlayer].GetItem(Main.myPlayer,itm,false,false);
+                    if (itm.stack > 0)
+                        Main.player[Main.myPlayer].QuickSpawnItem(itm, itm.stack);
                     return;
                 }
                 if (Main.mouseItem == null || Main.mouseItem.type == 0)
