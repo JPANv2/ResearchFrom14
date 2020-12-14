@@ -19,7 +19,9 @@ namespace ResearchFrom14.Common
     {
 
         static Task initTask = null;
-
+        public static List<int> alwaysResearched = new List<int>();
+        public static Dictionary<int, int> defaultValues = new Dictionary<int, int>();
+        public static Dictionary<int, List<string>> defaultCategories = new Dictionary<int, List<string>>();
         public static int[] totalResearch = new int[0];
         public static Dictionary<string, List<int>> category = new Dictionary<string, List<int>>();
         public static int[] createdTiles = new int[0];
@@ -36,6 +38,18 @@ namespace ResearchFrom14.Common
 
         private static void FillResearchTable()
         {
+            foreach (int i in defaultValues.Keys)
+            {
+                totalResearch[i] = defaultValues[i];
+            }
+            foreach (int i in defaultCategories.Keys)
+            {
+                foreach (String s in defaultCategories[i])
+                {
+                    AddCategory(s, i);
+                }
+            }
+
             foreach (string tag in ModContent.GetInstance<ExceptionListConfig>().customItemValues.Keys)
             {
                 int type = ResearchFrom14.getTypeFromTag(tag);
@@ -68,10 +82,13 @@ namespace ResearchFrom14.Common
                     Item test = new Item();
                     try
                     {
-                        test.SetDefaults(i);
+                        if (!ResearchFrom14.invalidSetDefaults.Contains(i))
+                            test.SetDefaults(i);
+                    
                     }catch(Exception ex)
                     {
                         ModLoader.GetMod("ResearchFrom14").Logger.Warn("Item id: " + i + " Threw an exception on SetDefaults and will be unresearchable:\n" + ex.StackTrace);
+                        ResearchFrom14.invalidSetDefaults.Add(i);
                         totalResearch[i] = -1;
                         continue;
                     }
@@ -208,15 +225,15 @@ namespace ResearchFrom14.Common
                             AddCategory("Pets/Light Pets", test.type);
                         }
                     }
-                    else if (test.rare == -11)
-                    {
-                        totalResearch[test.type] = 2;
-                        AddCategory("Quest Items", test.type);
-                    }
                     else if (isCustomCurrency(test))
                     {
                         totalResearch[test.type] = 50;
                         AddCategory("Currency", test.type);
+                    }
+                    else if (test.rare == -11)
+                    {
+                        totalResearch[test.type] = 2;
+                        AddCategory("Quest Items", test.type);
                     }
                     else if (test.createWall >= 0)
                     {
@@ -547,7 +564,7 @@ namespace ResearchFrom14.Common
             if(initTask != null && !initTask.IsCompleted)
                 Task.WaitAny(initTask);
             if (type < 0 || type > totalResearch.Length)
-                return 0;
+                return -1;
             return totalResearch[type];
         }
 

@@ -16,6 +16,8 @@ namespace ResearchFrom14.Common
 {
     public class ResearchPlayer : ModPlayer
     {
+        
+        public List<int> sharingWithWho = new List<int>();
         public TagCompound research = new TagCompound();
         public Item destroyingItem = new Item();
         public List<int> researchedCache = new List<int>();
@@ -55,15 +57,71 @@ namespace ResearchFrom14.Common
 
         public bool IsResearchedPrefix(Item item)
         {
-            if (research.ContainsKey(ResearchFrom14.ItemToTag(item) + ":p"))
+            String iTag = ResearchFrom14.ItemToTag(item) + ":p";
+            if (research.ContainsKey(iTag))
             {
-                byte[] ba = research.GetByteArray(ResearchFrom14.ItemToTag(item) + ":p");
-                foreach (byte b in ba) { 
-                    if (b == item.prefix)
+                if (research[iTag] is int || research[iTag] is byte)
+                {
+                    if ((byte)(research[iTag]) == item.prefix)
                         return true;
+                }
+                else
+                {
+                    byte[] ba = research.GetByteArray(ResearchFrom14.ItemToTag(item) + ":p");
+                    foreach (byte b in ba)
+                    {
+                        if (b == item.prefix)
+                            return true;
+                    }
                 }
             }
             return item.prefix == 0;
+        }
+
+        public void AddResearchPrefix(int itm, byte prefix)
+        {
+            if (prefix == 0)
+                return;
+            List<byte> prefixes = new List<byte>();
+            String iTag = ResearchFrom14.ItemIDToTag(itm) + ":p";
+            if (research.ContainsKey(iTag))
+            {
+                if ((research[iTag] as byte?) != null)
+                {
+                    prefixes.Add((research[iTag] as byte?).Value);
+                }
+                else if ((research[iTag] as byte[]) != null)
+                {
+                    prefixes.AddRange(research.GetByteArray(iTag));
+                }
+
+            }
+            if (!prefixes.Contains(prefix))
+            {
+
+                prefixes.Add(prefix);
+                prefixes.Sort();
+                research[iTag] = prefixes.ToArray();
+                /*
+                CheckForTeammates();
+                foreach (int plr in sharingWithWho)
+                {
+                    ModPacket pk = mod.GetPacket();
+                    pk.Write((byte)12);
+                    pk.Write((byte)plr);
+                    pk.Write(1);
+                    pk.Write((byte)(prefix));
+                    if (Main.netMode == NetmodeID.Server)
+                    {
+                        pk.Send(plr);
+                    }
+                    else
+                    {
+                        pk.Send();
+                    }
+                }*/
+            }
+            return;
         }
 
         public void AddResearchPrefix(Item item)
@@ -74,11 +132,40 @@ namespace ResearchFrom14.Common
             String iTag = ResearchFrom14.ItemToTag(item) + ":p";
             if (research.ContainsKey(iTag))
             {
-                prefixes.AddRange(research.GetByteArray(iTag));
+                if((research[iTag] as byte?) != null)
+                {
+                    prefixes.Add((research[iTag] as byte?).Value);
+                }
+                else if((research[iTag] as byte[]) != null)
+                {
+                    prefixes.AddRange(research.GetByteArray(iTag));
+                }
             }
-            prefixes.Add(item.prefix);
-            prefixes.Sort();
-            research[iTag] = prefixes.ToArray();
+            if (!prefixes.Contains(item.prefix))
+            {
+
+                prefixes.Add(item.prefix);
+                prefixes.Sort();
+                research[iTag] = prefixes.ToArray();
+                /*
+                CheckForTeammates();
+                foreach(int plr in sharingWithWho)
+                {
+                    ModPacket pk = mod.GetPacket();
+                    pk.Write((byte)12);
+                    pk.Write((byte)plr);
+                    pk.Write(1);
+                    pk.Write((byte)(item.prefix));
+                    if (Main.netMode == NetmodeID.Server)
+                    {
+                        pk.Send(plr);
+                    }
+                    else
+                    {
+                        pk.Send();
+                    }
+                }*/
+            }
             return;
         }
 
@@ -90,7 +177,17 @@ namespace ResearchFrom14.Common
         public byte[] GetResearchedPrefixes(String itemTag)
         {
             if (research.ContainsKey(itemTag + ":p"))
-                return research.GetByteArray(itemTag + ":p");
+            {
+                if (research[itemTag + ":p"] is int || research[itemTag + ":p"] is byte)
+                {
+                    return new byte[] { (byte)(research[itemTag + ":p"]) };
+                }
+                else
+                {
+                    return research.GetByteArray(itemTag + ":p");
+                }
+            }
+                
             return new byte[0];
         }
 
@@ -115,6 +212,14 @@ namespace ResearchFrom14.Common
 
         public int AddResearchedAmount(String itemTag, int amount)
         {
+            if (itemTag == "0")
+            {
+                if (research.ContainsKey(itemTag))
+                    research.Remove(itemTag);
+                return amount;
+            }
+                
+
             int available = 0;
             if (research.ContainsKey(itemTag))
                 available = research.GetAsInt(itemTag);
@@ -136,7 +241,19 @@ namespace ResearchFrom14.Common
 
         public int AddResearchedAmount(Item realItem)
         {
+            
             int retval = AddResearchedAmount(ResearchFrom14.ItemToTag(realItem), realItem.stack);
+            CheckForTeammates();
+            foreach (int plr in sharingWithWho)
+            {
+                ModPacket pk = mod.GetPacket();
+                pk.Write((byte)11);
+                pk.Write((byte)(plr));
+                pk.Write((byte)(Main.myPlayer));
+                pk.Write(realItem.type);
+                pk.Write(realItem.stack - retval);
+                pk.Send(plr);
+            }
             return retval;
         }
 
@@ -154,38 +271,180 @@ namespace ResearchFrom14.Common
                 oldResearchCache.AddRange(researchedCache);
                 foreach (int type in oldResearchCache)
                 {
-                    Item itm = new Item();
-                    itm.SetDefaults(type);
-                    rebuildingCache = true;
-
-                    if (itm.createTile >= 0)
+                    CheckRecipesForItem(type);
+                }
+                rebuildingCache = false;
+                ((ResearchFrom14)mod).ui.recipes.changedToList = true;
+            }
+        }
+        private int playerToSendCacheTo = -1;
+        public virtual void CheckForTeammates()
+        {
+            mod.Logger.Info("Checking for teammates...");
+            if (Main.netMode == NetmodeID.MultiplayerClient && ModContent.GetInstance<Config>().shareWithTeam && player.team > 0)
+            {
+                for (int i = 0; i < Main.player.Length; i++)
+                {
+                    if (sharingWithWho.Contains(i))
                     {
-                        List<int> tiles = AdjTiles(itm.createTile);
-                        foreach (int t in tiles)
+
+                        if (!Main.player[i].active || Main.player[i].team != player.team)
                         {
-                            RecipeFinder rf = new RecipeFinder();
-                            rf.AddTile(t);
-                            List<Recipe> res = rf.SearchRecipes();
-                            // Main.NewText("Found " + res.Count + "recipes with tile.");
-                            foreach (Recipe r in res)
-                            {
-                                validateAndResearchRecipe(r);
-                            }
+                            sharingWithWho.Remove(i);
+                            mod.Logger.Info("Player " + i + " was in " + player.team + " team.");
                         }
                     }
-                    RecipeFinder rf2 = new RecipeFinder();
-                    rf2.AddIngredient(itm.type);
-                    List<Recipe> res2 = rf2.SearchRecipes();
-                    // Main.NewText("Found " + res2.Count + "recipes with item.");
-                    foreach (Recipe r in res2)
+                    else
                     {
-                        validateAndResearchRecipe(r);
+                        if (i != player.whoAmI && Main.player[i].active && Main.player[i].team == player.team)
+                        {
+                            mod.Logger.Info("Player " + i + " was just found in " + player.team + " team.");
+                            shareCacheTo(i);
+                            sharingWithWho.Add(i);
+                        }
                     }
-                    rebuildingCache = false;
-                    ((ResearchFrom14)mod).ui.recipes.changedToList = true;
                 }
             }
         }
+
+        private List<string> researchedParts = new List<string>();
+        public void CheckRecipesForItem(int type)
+        {
+            ((ResearchFrom14)mod).ui.recipes.changedToList = true;
+            if (ModContent.GetInstance<Config>().researchRecipes)
+            {
+                Item itm = new Item();
+                itm.SetDefaults(type);
+
+                if (itm.createTile >= 0)
+                {
+                    List<int> tiles = AdjTiles(itm.createTile);
+                    foreach (int t in tiles)
+                    {
+                        RecipeFinder rf = new RecipeFinder();
+                        rf.AddTile(t);
+                        List<Recipe> res = rf.SearchRecipes();
+                        // Main.NewText("Found " + res.Count + "recipes with tile.");
+                        foreach (Recipe r in res)
+                        {
+                            validateAndResearchRecipe(r);
+                        }
+                    }
+                }
+                RecipeFinder rf2 = new RecipeFinder();
+                rf2.AddIngredient(itm.type);
+                List<Recipe> res2 = rf2.SearchRecipes();
+                // Main.NewText("Found " + res2.Count + "recipes with item.");
+                foreach (Recipe r in res2)
+                {
+                    validateAndResearchRecipe(r);
+                }
+            }
+            Mod rare = ModLoader.GetMod("ARareItemSwapJPANs");
+            if (rare != null && ModContent.GetInstance<Config>().PartsCompat)
+            {
+                List<string> parts = rare.Call("GetPartList") as List<string>;
+                if (parts == null)
+                    return;
+                parts.RemoveAll((x) => !IsResearched(x));
+                if(parts.Count > 0)
+                {
+                    bool allPartsResearched = true;
+                    foreach(string part in parts)
+                    {
+                        allPartsResearched = allPartsResearched && researchedParts.Contains(part);
+                    }
+                    if (!allPartsResearched)
+                    {
+                        
+                        List<Item> results = rare.Call("GetMaxPurchasesAvailable", parts) as List<Item>;
+                       
+                        if (results == null) 
+                            return;
+                        foreach (string part in parts)
+                        {
+                            if (!researchedParts.Contains(part))
+                                researchedParts.Add(part);
+                        }
+                        foreach (Item result in results)
+                        {
+                           
+                            if (!IsResearched(result))
+                            {
+                                AddResearchedAmount(result.type, Int32.MaxValue - 1000);
+                                researchedCache.Add(result.type);
+                                CheckRecipesForItem(result.type);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        public void shareCacheTo( int target)
+        {
+            playerToSendCacheTo = target;
+            Task.Run(spreadCache);
+        }
+        private void spreadCache()
+        {
+            int i = playerToSendCacheTo;
+            actualRebuildCache();
+
+            ModPacket pk = mod.GetPacket();
+            pk.Write((byte)10);
+            pk.Write((byte)i);
+            pk.Write(researchedCache.Count);
+            for (int k = 0; k < researchedCache.Count; k++)
+                pk.Write(researchedCache[k]);
+            if (Main.netMode == NetmodeID.Server)
+                pk.Send(i);
+            else
+                pk.Send();
+           // mod.Logger.Info("Sent message 10 to " + i);
+           /*
+            for (int itm = 0; itm < ItemLoader.ItemCount; itm++)
+            {
+                String iTag = ResearchFrom14.ItemIDToTag(itm) + ":p";
+                if (research.ContainsKey(iTag))
+                {
+
+                    List<byte> prefixes = new List<byte>();
+
+                    if (research.ContainsKey(iTag))
+                    {
+                        if((research[iTag] as byte?) != null)
+                        {
+                            prefixes.Add((research[iTag] as byte?).Value);
+                        }
+                        else if ((research[iTag] as byte[]) != null)
+                        {
+                            prefixes.AddRange(research.GetByteArray(iTag));
+                        }
+
+                    }
+                    if (prefixes.Count > 0)
+                    {
+                        pk = mod.GetPacket();
+                        pk.Write((byte)12);
+                        pk.Write((byte)i);
+
+                        pk.Write(prefixes.Count);
+                        for (int k = 0; k < prefixes.Count; k++)
+                            pk.Write((byte)(prefixes[k]));
+                        if (Main.netMode == NetmodeID.Server)
+                        {
+                            pk.Send(i);
+                        }
+                        else
+                        {
+                            pk.Send();
+                        }
+                    }
+                }
+            }*/
+        }
+
         public void AddAllResearchedItems(List<int> researched)
         {
             foreach(int type in researched)
@@ -197,32 +456,7 @@ namespace ResearchFrom14.Common
                     itm.SetDefaults(type);
                     AddResearchedAmount(type, Int32.MaxValue - 1000);
                     researchedCache.Add(type);
-                    if (ModContent.GetInstance<Config>().researchRecipes)
-                    {
-                        if (itm.createTile >= 0)
-                        {
-                            List<int> tiles = AdjTiles(itm.createTile);
-                            foreach (int t in tiles)
-                            {
-                                RecipeFinder rf = new RecipeFinder();
-                                rf.AddTile(t);
-                                List<Recipe> res = rf.SearchRecipes();
-                                // Main.NewText("Found " + res.Count + "recipes with tile.");
-                                foreach (Recipe r in res)
-                                {
-                                    validateAndResearchRecipe(r);
-                                }
-                            }
-                        }
-                        RecipeFinder rf2 = new RecipeFinder();
-                        rf2.AddIngredient(itm.type);
-                        List<Recipe> res2 = rf2.SearchRecipes();
-                        // Main.NewText("Found " + res2.Count + "recipes with item.");
-                        foreach (Recipe r in res2)
-                        {
-                            validateAndResearchRecipe(r);
-                        }
-                    }
+                    CheckRecipesForItem(type);
                     rebuildingCache = false;
                     ((ResearchFrom14)mod).ui.recipes.changedToList = true;
 
@@ -257,19 +491,22 @@ namespace ResearchFrom14.Common
             researchedTileAdj = new bool[TileLoader.TileCount];
             for (int i = 0; i < ItemLoader.ItemCount; i++)
             {
-                if (IsResearched(i))
+                if (IsResearched(i) && !researchedCache.Contains(i))
                 {
                     researchedCache.Add(i);
                     Item itm = new Item();
                     try
                     {
-                        itm.SetDefaults(i);
-                        if (itm.createTile >= 0)
-                            AdjTiles(itm.createTile);
-
+                        if (!ResearchFrom14.invalidSetDefaults.Contains(i))
+                        {
+                            itm.SetDefaults(i);
+                            if (itm.createTile >= 0)
+                                AdjTiles(itm.createTile);
+                        }
                     }catch (Exception ex)
                     {
                         mod.Logger.Warn("Item " + i +" threw excetpion during setDefaults:\n"+ ex.ToString() +"\n"+  ex.StackTrace);
+                        ResearchFrom14.invalidSetDefaults.Add(i);
                     }
                     
                 }
@@ -284,7 +521,7 @@ namespace ResearchFrom14.Common
 
         }
 
-        private List<int> AdjTiles(int type)
+        public List<int> AdjTiles(int type)
         {
             List<int> ans = new List<int>() { type };
             if (!researchedTileCache.Contains(type))  
@@ -387,36 +624,7 @@ namespace ResearchFrom14.Common
                         {
                             rebuildingCache = true;
                             researchedCache.Add(type);
-                            ((ResearchFrom14)mod).ui.recipes.changedToList = true;
-                            if (ModContent.GetInstance<Config>().researchRecipes)
-                            {
-                                Item itm = new Item();
-                                itm.SetDefaults(type);
-
-                                if (itm.createTile >= 0)
-                                {
-                                    List<int> tiles = AdjTiles(itm.createTile);
-                                    foreach (int t in tiles)
-                                    {
-                                        RecipeFinder rf = new RecipeFinder();
-                                        rf.AddTile(t);
-                                        List<Recipe> res = rf.SearchRecipes();
-                                        // Main.NewText("Found " + res.Count + "recipes with tile.");
-                                        foreach (Recipe r in res)
-                                        {
-                                            validateAndResearchRecipe(r);
-                                        }
-                                    }
-                                }
-                                RecipeFinder rf2 = new RecipeFinder();
-                                rf2.AddIngredient(itm.type);
-                                List<Recipe> res2 = rf2.SearchRecipes();
-                                // Main.NewText("Found " + res2.Count + "recipes with item.");
-                                foreach (Recipe r in res2)
-                                {
-                                    validateAndResearchRecipe(r);
-                                }
-                            }
+                            CheckRecipesForItem(type);
                             rebuildingCache = false;
                         }
                     }
@@ -509,34 +717,7 @@ namespace ResearchFrom14.Common
             
             AddResearchedAmount(r.createItem.type, Int32.MaxValue - 1000);
             researchedCache.Add(r.createItem.type);
-            if (ModContent.GetInstance<Config>().researchRecipes)
-            {
-                Item itm = new Item();
-                itm.SetDefaults(r.createItem.type);
-                if (itm.createTile >= 0)
-                {
-                    List<int> tiless = AdjTiles(itm.createTile);
-                    foreach (int t in tiless)
-                    {
-                        RecipeFinder rf = new RecipeFinder();
-                        rf.AddTile(t);
-                        List<Recipe> res = rf.SearchRecipes();
-                        // Main.NewText("Found " + res.Count + "recipes with tile.");
-                        foreach (Recipe r2 in res)
-                        {
-                            validateAndResearchRecipe(r2);
-                        }
-                    }
-                }
-                RecipeFinder rf2 = new RecipeFinder();
-                rf2.AddIngredient(r.createItem.type);
-                List<Recipe> res2 = rf2.SearchRecipes();
-                // Main.NewText("Found " + res2.Count + "recipes with item.");
-                foreach (Recipe r2 in res2)
-                {
-                    validateAndResearchRecipe(r2);
-                }
-            }
+            CheckRecipesForItem(r.createItem.type);
         }
 
         public override bool ShiftClickSlot(Item[] inventory, int context, int slot)

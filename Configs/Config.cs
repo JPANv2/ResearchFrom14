@@ -76,5 +76,14 @@ namespace ResearchFrom14.Configs
         [DefaultValue(false)]
         public bool showTag;
 
+        [Label("Automatically share research with team members")]
+        [Tooltip("Should the mod try to synchronize both team member's research when one researches something. It will sync all, including prefixes and partial researches.")]
+        [DefaultValue(false)]
+        public bool shareWithTeam;
+
+        [Label("Research mod Compatibility - Infinite Parts makes all purchases researched")]
+        [Tooltip("By turning this on, researching a part you have infinite of will make all the purchaseable items researched.")]
+        [DefaultValue(false)]
+        public bool PartsCompat;
     }
 }

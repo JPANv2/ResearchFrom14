@@ -193,10 +193,16 @@ namespace ResearchFrom14.Common.UI
         {
             mouseTooltip = "";
             isSearching = true;
+            try
+            {
             Item mouse = Main.HoverItem;
             Main.HoverItem = item;
             Main.instance.MouseText("");
             Main.HoverItem = mouse;
+            }catch(Exception ex)
+            {
+                ModLoader.GetMod("ResearchFrom14").Logger.Info("Could not get tooltip for item " + item.type + ";");
+            }
             isSearching = false;
             return mouseTooltip;
         }
